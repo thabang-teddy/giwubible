@@ -1,34 +1,54 @@
-import { useVerseComparison } from '../hooks/useVerseComparison'
+import { useAllVerseComparisons } from '../hooks/useAllVerseComparisons'
 
-export default function VersePanel({ comparisonBible, book, chapter, activeVerse }) {
-  const { result, loading, error } = useVerseComparison(comparisonBible, book, chapter, activeVerse)
-
-  if (!comparisonBible) {
-    return (
-      <div className="p-4 text-muted fst-italic">
-        Select a comparison version in the sidebar.
+function VersionCard({ result }) {
+  return (
+    <div className="version-card">
+      <div className="version-card-header">
+        <span className="version-card-name">{result.version}</span>
+        <span className="version-card-badge">{result.abbreviation}</span>
       </div>
-    )
-  }
+      {result.text
+        ? <p className="version-card-text">{result.text}</p>
+        : <span className="version-card-dots">• • •</span>
+      }
+    </div>
+  )
+}
 
-  if (!activeVerse) {
-    return (
-      <div className="p-4 text-muted fst-italic">
-        Click a verse to compare.
-      </div>
-    )
-  }
-
-  if (loading) return <div className="p-4 text-muted">Loading…</div>
-  if (error) return <div className="p-4 text-danger">Failed to load verse.</div>
+export default function VersePanel({ bibles, book, chapter, activeVerse }) {
+  const { results, loading } = useAllVerseComparisons(bibles, book, chapter, activeVerse)
 
   return (
-    <div className="p-4">
-      <div className="mb-2 text-muted small fw-semibold text-uppercase" style={{ letterSpacing: '0.06em' }}>
-        {result?.abbreviation} — verse {activeVerse}
+    <aside className="app-panel">
+      <div className="panel-tabs">
+        <div className="panel-tab active">Parallel Verses</div>
+        <div className="panel-tab">AI Insights</div>
       </div>
-      <p className="mb-0 fs-5">{result?.text}</p>
-      <div className="mt-2 text-muted small">{result?.version}</div>
-    </div>
+
+      <div className="panel-body">
+        {!activeVerse ? (
+          <p className="panel-empty">Click any verse to see parallel translations.</p>
+        ) : (
+          <>
+            <p className="panel-section-title">Verse {activeVerse} Comparisons</p>
+
+            {loading && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="version-card">
+                    <div className="skeleton" style={{ height: 12, width: '60%', marginBottom: 10 }} />
+                    <div className="skeleton" style={{ height: 14, width: '90%' }} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!loading && results.map((r) => (
+              <VersionCard key={r.bible} result={r} />
+            ))}
+          </>
+        )}
+      </div>
+    </aside>
   )
 }

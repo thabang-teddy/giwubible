@@ -1,25 +1,46 @@
 import { useChapter } from '../hooks/useChapter'
+import ChapterNav from './ChapterNav'
 
-export default function MainColumn({ book, chapter, activeVerse, setActiveVerse }) {
+export default function MainColumn({ bookName, book, chapter, onChapterChange, activeVerse, setActiveVerse }) {
   const { verses, loading, error } = useChapter(book, chapter)
 
-  if (loading) return <div className="p-4 text-muted">Loading…</div>
-  if (error) return <div className="p-4 text-danger">Failed to load chapter.</div>
-  if (!verses.length) return <div className="p-4 text-muted">No verses found.</div>
-
   return (
-    <div className="p-4">
-      {verses.map((verse) => (
-        <p
-          key={verse.v}
-          className={`mb-2 rounded px-2 py-1 ${activeVerse === verse.v ? 'bg-warning-subtle' : 'verse-row'}`}
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveVerse(verse.v === activeVerse ? null : verse.v)}
-        >
-          <sup className="text-muted me-1">{verse.v}</sup>
-          {verse.t}
-        </p>
-      ))}
+    <div className="app-main">
+      <ChapterNav
+        bookName={bookName}
+        book={book}
+        chapter={chapter}
+        onChapterChange={onChapterChange}
+      />
+
+      <div className="chapter-content">
+        <h1 className="chapter-title">{bookName} {chapter}</h1>
+
+        {loading && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: 20, width: `${70 + (i % 3) * 10}%` }} />
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <p style={{ color: 'var(--gray-400)', textAlign: 'center', marginTop: 40 }}>
+            Failed to load chapter.
+          </p>
+        )}
+
+        {!loading && !error && verses.map((verse) => (
+          <p
+            key={verse.v}
+            className={`verse-item${activeVerse === verse.v ? ' active' : ''}`}
+            onClick={() => setActiveVerse(verse.v === activeVerse ? null : verse.v)}
+          >
+            <span className="verse-num">{verse.v}</span>
+            {verse.t}
+          </p>
+        ))}
+      </div>
     </div>
   )
 }

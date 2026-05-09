@@ -2,12 +2,27 @@ import { Link } from 'react-router-dom'
 
 export default function HomePage() {
   return (
-    <div className="d-flex flex-column align-items-center justify-content-center min-vh-100 text-center px-3">
-      <h1 className="display-4 fw-bold mb-2">Giwu Bible</h1>
-      <p className="lead text-muted mb-4">
-        Read the KJV side-by-side with any other translation.
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '0 24px',
+      fontFamily: 'var(--font-sans)',
+    }}>
+      <div style={{
+        width: 52, height: 52, background: 'var(--primary)', borderRadius: 12,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 26, marginBottom: 20,
+      }}>📖</div>
+      <h1 style={{ fontSize: 36, fontWeight: 700, margin: '0 0 10px', color: 'var(--gray-900)' }}>
+        Giwu Bible
+      </h1>
+      <p style={{ fontSize: 16, color: 'var(--gray-500)', marginBottom: 32, maxWidth: 360 }}>
+        Read the King James Version side-by-side with parallel translations.
       </p>
-      <Link to="/read" className="btn btn-primary btn-lg px-5">
+      <Link to="/read" style={{
+        background: 'var(--primary)', color: '#fff', textDecoration: 'none',
+        padding: '12px 36px', borderRadius: 8, fontWeight: 600, fontSize: 15,
+        transition: 'background 0.15s',
+      }}>
         Start Reading
       </Link>
     </div>

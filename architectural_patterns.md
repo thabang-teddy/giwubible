@@ -111,3 +111,31 @@ Errors:
   "code": "MACHINE_CODE"
 }
 ```
+
+---
+
+## 8. Frontend: localStorage Persistence
+
+User selections are persisted across sessions using a shared `useLocalStorage` hook. The three persisted keys are:
+
+| Key                    | Value                        | Default       |
+|------------------------|------------------------------|---------------|
+| `giwu_bible`           | comparison bible table name  | `"t_asv"`     |
+| `giwu_book`            | book ID (integer)            | `1` (Genesis) |
+| `giwu_chapter`         | chapter number (integer)     | `1`           |
+
+The primary Bible (KJV) is never stored — it is a hardcoded constant.
+
+On first load, `ReadPage` reads these keys and initialises state from them. On change, each setter also writes back to `localStorage`. The `useLocalStorage` hook encapsulates this read/write logic and is the only place that touches `window.localStorage` directly.
+
+---
+
+## 9. Home Page: Marketing Landing
+
+`HomePage` (`js/fn.giwu/src/pages/HomePage.jsx`) is a standalone marketing page — it does **not** render the Bible reader. It contains:
+
+- App description and feature highlights
+- Download/store links (external URLs, e.g. App Store, Google Play)
+- A "Read Online" CTA that navigates to `/read`
+
+The `/read` route renders `ReadPage`. These are two fully separate page components with no shared state.

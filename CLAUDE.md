@@ -96,8 +96,8 @@ php artisan test
 
 ## Open Decisions
 
-- [ ] Persist user selections (version, book, chapter) in `localStorage`?
-- [ ] Home page — links to external app store, or IS the web reader?
+- [x] Persist user selections (version, book, chapter) in `localStorage`?
+- [x] Home page — links to external app store, or IS the web reader?
 
 ---
 

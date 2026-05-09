@@ -15,8 +15,8 @@ function VersionCard({ result }) {
   )
 }
 
-export default function VersePanel({ bibles, book, chapter, activeVerse }) {
-  const { results, loading } = useAllVerseComparisons(bibles, book, chapter, activeVerse)
+export default function VersePanel({ bibles, primaryBible, book, chapter, activeVerse }) {
+  const { results, loading } = useAllVerseComparisons(bibles, primaryBible, book, chapter, activeVerse)
 
   return (
     <aside className="app-panel">

@@ -1,8 +1,8 @@
 import { useChapter } from '../hooks/useChapter'
 import ChapterNav from './ChapterNav'
 
-export default function MainColumn({ bookName, book, chapter, onChapterChange, activeVerse, setActiveVerse }) {
-  const { verses, loading, error } = useChapter(book, chapter)
+export default function MainColumn({ primaryBible, bookName, book, chapter, onChapterChange, activeVerse, setActiveVerse }) {
+  const { verses, loading, error } = useChapter(primaryBible, book, chapter)
 
   return (
     <div className="app-main">

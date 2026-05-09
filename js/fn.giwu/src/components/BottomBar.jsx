@@ -1,6 +1,6 @@
-export default function BottomBar({ bookName, chapter, verse }) {
+export default function BottomBar({ bookName, chapter, verse, versionName }) {
   const ref = verse
-    ? `${bookName?.toUpperCase()} ${chapter}:${verse} • KING JAMES VERSION`
+    ? `${bookName?.toUpperCase()} ${chapter}:${verse} • ${(versionName ?? '').toUpperCase()}`
     : ''
 
   return (

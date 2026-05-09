@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react'
 import { getVerse } from '../api/verse'
 
-const KJV = 't_kjv'
-
-export function useAllVerseComparisons(bibles, book, chapter, activeVerse) {
+export function useAllVerseComparisons(bibles, primaryBible, book, chapter, activeVerse) {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const comparisons = bibles?.filter((b) => b.table !== KJV)
+    const comparisons = bibles?.filter((b) => b.table !== primaryBible)
     if (!comparisons?.length || !book || !chapter || !activeVerse) {
       setResults([])
       return
@@ -21,7 +19,7 @@ export function useAllVerseComparisons(bibles, book, chapter, activeVerse) {
     )
       .then((all) => setResults(all.filter(Boolean)))
       .finally(() => setLoading(false))
-  }, [bibles, book, chapter, activeVerse])
+  }, [bibles, primaryBible, book, chapter, activeVerse])
 
   return { results, loading }
 }

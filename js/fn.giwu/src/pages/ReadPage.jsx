@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
 import MainColumn from '../components/MainColumn'
@@ -7,21 +7,39 @@ import BottomBar from '../components/BottomBar'
 import { useBible } from '../hooks/useBible'
 import { maxChaptersForBook } from '../data/chapterCounts'
 
+function ls(key, fallback) {
+  try {
+    const v = localStorage.getItem(key)
+    return v !== null ? JSON.parse(v) : fallback
+  } catch {
+    return fallback
+  }
+}
+
 export default function ReadPage() {
   const { bibles, books, loading } = useBible()
 
-  const [primaryBible, setPrimaryBible] = useState('t_kjv')
-  const [book, setBook] = useState(1)
-  const [chapter, setChapter] = useState(1)
+  const [primaryBible, setPrimaryBible] = useState(() => ls('giwu_bible', 't_kjv'))
+  const [book, setBook] = useState(() => ls('giwu_book', 1))
+  const [chapter, setChapter] = useState(() => ls('giwu_chapter', 1))
   const [activeVerse, setActiveVerse] = useState(null)
+
+  useEffect(() => { localStorage.setItem('giwu_bible', JSON.stringify(primaryBible)) }, [primaryBible])
+  useEffect(() => { localStorage.setItem('giwu_book', JSON.stringify(book)) }, [book])
+  useEffect(() => { localStorage.setItem('giwu_chapter', JSON.stringify(chapter)) }, [chapter])
 
   const handleBookChange = (b) => {
     setBook(b)
-    setChapter((prev) => Math.min(prev, maxChaptersForBook(b)))
+    setChapter(1)
     setActiveVerse(null)
   }
   const handleChapterChange = (c) => { setChapter(c); setActiveVerse(null) }
-  const handlePrimaryBibleChange = (table) => { setPrimaryBible(table); setActiveVerse(null) }
+  const handlePrimaryBibleChange = (table) => {
+    setPrimaryBible(table)
+    setBook(1)
+    setChapter(1)
+    setActiveVerse(null)
+  }
 
   const currentBook = books.find((b) => b.b === book)
   const currentVersion = bibles.find((b) => b.table === primaryBible)

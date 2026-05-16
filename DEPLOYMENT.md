@@ -25,8 +25,8 @@ npm run build        # produces js/fn.giwu/dist/
 
 | Subdomain | Document Root |
 |-----------|---------------|
-| `yourdomain.com` | `public_html/` |
-| `api.yourdomain.com` | `public_html/api/public/` |
+| `giwu.co.za` | `public_html/` |
+| `api.giwu.co.za` | `public_html/api/public/` |
 
 > In cPanel → **Domains** → **Create a New Domain**, set the document root exactly as above for the API subdomain. This means Laravel's `public/index.php` is the entry point.
 
@@ -88,9 +88,9 @@ Then edit `.env` with your real values:
 ```dotenv
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://api.yourdomain.com
+APP_URL=https://api.giwu.co.za
 
-FRONTEND_URL=https://yourdomain.com
+FRONTEND_URL=https://giwu.co.za
 
 # Absolute path — find it with: pwd inside the api folder
 BIBLE_DB=/home/youraccount/public_html/api/database/bible-sqlite.db
@@ -118,7 +118,7 @@ php artisan route:cache
 Before building in step 1, create `js/fn.giwu/.env.production`:
 
 ```dotenv
-VITE_API_URL=https://api.yourdomain.com/api
+VITE_API_URL=https://api.giwu.co.za/api
 ```
 
 Then rebuild and re-upload `dist/`.
@@ -126,8 +126,8 @@ Then rebuild and re-upload `dist/`.
 ### 9. Verify
 
 ```
-https://api.yourdomain.com/api/bibles   → JSON list of versions
-https://yourdomain.com                  → React app loads
+https://api.giwu.co.za/api/bibles   → JSON list of versions
+https://giwu.co.za                  → React app loads
 ```
 
 ---
@@ -171,7 +171,7 @@ sudo chown -R $USER:$USER /var/www/giwubible
 cd /var/www/giwubible/js/fn.giwu
 
 # Set API URL before building
-echo "VITE_API_URL=https://api.yourdomain.com/api" > .env.production
+echo "VITE_API_URL=https://api.giwu.co.za/api" > .env.production
 
 npm install
 npm run build        # dist/ is created here
@@ -196,9 +196,9 @@ Edit `.env`:
 ```dotenv
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://api.yourdomain.com
+APP_URL=https://api.giwu.co.za
 
-FRONTEND_URL=https://yourdomain.com
+FRONTEND_URL=https://giwu.co.za
 
 BIBLE_DB=/var/www/giwubible/php/data/bible-sqlite.db
 
@@ -232,7 +232,7 @@ Create `/etc/nginx/sites-available/giwubible`:
 # ── Frontend (React SPA) ────────────────────────────
 server {
     listen 80;
-    server_name yourdomain.com www.yourdomain.com;
+    server_name giwu.co.za www.giwu.co.za;
     root /var/www/giwubible/js/fn.giwu/dist;
     index index.html;
 
@@ -251,7 +251,7 @@ server {
 # ── Backend (Laravel API) ───────────────────────────
 server {
     listen 80;
-    server_name api.yourdomain.com;
+    server_name api.giwu.co.za;
     root /var/www/giwubible/php/api.giwu/public;
     index index.php;
 
@@ -284,7 +284,7 @@ sudo systemctl reload nginx
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com -d api.yourdomain.com
+sudo certbot --nginx -d giwu.co.za -d www.giwu.co.za -d api.giwu.co.za
 ```
 
 Certbot patches both server blocks automatically and sets up auto-renewal.
@@ -292,8 +292,8 @@ Certbot patches both server blocks automatically and sets up auto-renewal.
 ### 9. Verify
 
 ```bash
-curl https://api.yourdomain.com/api/bibles   # JSON response
-curl https://yourdomain.com                  # HTML page
+curl https://api.giwu.co.za/api/bibles   # JSON response
+curl https://giwu.co.za                  # HTML page
 ```
 
 ---
@@ -334,4 +334,4 @@ Run both blocks above in order.
 | Regenerate app key | `php artisan key:generate` |
 | Clear & rebuild cache | `php artisan config:cache && php artisan route:cache` |
 | Fix storage permissions | `chown -R www-data:www-data storage bootstrap/cache` |
-| Test API | `curl https://api.yourdomain.com/api/bibles` |
+| Test API | `curl https://api.giwu.co.za/api/bibles` |

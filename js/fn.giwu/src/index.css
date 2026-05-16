@@ -456,6 +456,41 @@ body {
   letter-spacing: 3px;
 }
 
+.parallel-bibles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.parallel-bible-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.parallel-bible-item:hover {
+  background: var(--gray-50);
+}
+
+.parallel-bible-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.parallel-bible-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
 /* ── Footer ────────────────────────────────────────── */
 .app-footer {
   height: var(--footer-h);

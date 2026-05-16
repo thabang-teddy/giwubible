@@ -1,6 +1,6 @@
 # Frontend
 js/fn.giwu/node_modules/
-js/fn.giwu/dist/
+# js/fn.giwu/dist/
 js/fn.giwu/.env
 
 # Backend
@@ -11,4 +11,5 @@ php/api.giwu/storage/framework/cache/
 php/api.giwu/storage/framework/sessions/
 php/api.giwu/storage/framework/views/
 php/api.giwu/bootstrap/cache/
-/.claude
+.claude/
+.claude/worktrees/

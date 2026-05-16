@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 
-export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange }) {
+export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onReset }) {
   const [open, setOpen] = useState(false)
+  const [dark, setDark] = useState(() => {
+    try { return localStorage.getItem('giwu_dark') === 'true' } catch { return false }
+  })
   const ref = useRef(null)
 
   const current = bibles?.find((b) => b.table === primaryBible)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+    try { localStorage.setItem('giwu_dark', dark) } catch {}
+  }, [dark])
 
   useEffect(() => {
     if (!open) return
@@ -22,6 +30,36 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange }) {
       </Link>
 
       <div className="navbar-actions">
+        <button
+          className="navbar-icon-btn"
+          onClick={onReset}
+          title="Reset to Genesis 1 (KJV)"
+          aria-label="Reset selection"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+        </button>
+
+        <button
+          className="navbar-icon-btn"
+          onClick={() => setDark((d) => !d)}
+          title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label="Toggle dark mode"
+        >
+          {dark ? (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+            </svg>
+          ) : (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          )}
+        </button>
+
         <div ref={ref} style={{ position: 'relative' }}>
           <button
             className="navbar-version-btn"

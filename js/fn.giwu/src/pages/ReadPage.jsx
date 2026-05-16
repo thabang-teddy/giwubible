@@ -28,6 +28,13 @@ export default function ReadPage() {
   useEffect(() => { localStorage.setItem('giwu_book', JSON.stringify(book)) }, [book])
   useEffect(() => { localStorage.setItem('giwu_chapter', JSON.stringify(chapter)) }, [chapter])
 
+  const handleReset = () => {
+    setPrimaryBible('t_kjv')
+    setBook(1)
+    setChapter(1)
+    setActiveVerse(null)
+  }
+
   const handleBookChange = (b) => {
     setBook(b)
     setChapter(1)
@@ -50,6 +57,7 @@ export default function ReadPage() {
         bibles={bibles}
         primaryBible={primaryBible}
         onPrimaryBibleChange={handlePrimaryBibleChange}
+        onReset={handleReset}
       />
 
       <div className="app-body">

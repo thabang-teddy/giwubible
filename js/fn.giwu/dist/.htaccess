@@ -1,0 +1,75 @@
+# Giwu Bible – Apache config for React SPA (Vite build)
+# This file is copied verbatim to dist/ by Vite at build time.
+
+# ── SPA routing ───────────────────────────────────────────────
+# Redirect all non-file, non-directory requests to index.html
+# so React Router can handle client-side navigation.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Pass real files and directories through unchanged
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# ── Compression ───────────────────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE \
+    text/html \
+    text/css \
+    text/javascript \
+    application/javascript \
+    application/json \
+    image/svg+xml \
+    font/woff2
+</IfModule>
+
+# ── Cache control ─────────────────────────────────────────────
+# Vite fingerprints hashed assets – safe to cache indefinitely.
+# index.html must never be cached so users always get the latest shell.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|mjs|css|woff2?|ttf|eot|ico|png|jpg|jpeg|gif|webp|avif|svg)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  <FilesMatch "^index\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+</IfModule>
+
+# ── Security headers ──────────────────────────────────────────
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options  "nosniff"
+  Header always set X-Frame-Options         "DENY"
+  Header always set Referrer-Policy         "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy      "camera=(), microphone=(), geolocation=()"
+
+  # Uncomment and tune once production API origin is known:
+  # Header always set Content-Security-Policy \
+  #   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.example.com; img-src 'self' data:; font-src 'self';"
+</IfModule>
+
+# ── MIME types ────────────────────────────────────────────────
+<IfModule mod_mime.c>
+  AddType application/javascript  .js .mjs
+  AddType text/css                .css
+  AddType image/webp              .webp
+  AddType image/avif              .avif
+  AddType font/woff2              .woff2
+</IfModule>
+
+# ── Block sensitive files ─────────────────────────────────────
+<FilesMatch "^\.env">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+  </IfModule>
+</FilesMatch>

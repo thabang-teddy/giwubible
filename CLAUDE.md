@@ -6,12 +6,13 @@ Multi-version Bible reader. Users read a primary chapter (KJV by default) and cl
 
 ## Tech Stack
 
-| Layer     | Technology                                                      |
-|-----------|-----------------------------------------------------------------|
-| Frontend  | React.js + Bootstrap 5                                          |
-| Backend   | Laravel 11 (REST API)                                           |
-| Database  | SQLite (`bible-sqlite.db`) — Laravel `sqlite` driver, read-only |
-| Auth      | None (v1 is stateless)                                          |
+| Layer              | Technology                                                      |
+|--------------------|-----------------------------------------------------------------|
+| Web Frontend       | React.js + Bootstrap 5                                          |
+| Mobile/Desktop App | Flutter (Android + Windows/macOS/Linux)                         |
+| Backend            | Laravel 11 (REST API)                                           |
+| Database           | SQLite (`bible-sqlite.db`) — Laravel `sqlite` driver, read-only |
+| Auth               | None (v1 is stateless)                                          |
 
 ---
 
@@ -24,6 +25,19 @@ js/fn.giwu/          # React frontend
     components/      # Sidebar, MainColumn, VersePanel, BookSelector, BibleSelector
     hooks/           # useBible, useChapter, useVerseComparison
     api/             # Axios client & API wrappers
+
+flutter/fn.giwu/     # Flutter mobile/desktop app
+  lib/
+    main.dart        # Entry point — ProviderScope + MaterialApp
+    pages/           # ReadPage (primary screen)
+    widgets/         # VerseList, VerseCard, BibleSelector, BookSelector, ChapterNav, ComparisonSheet
+    providers/       # Riverpod providers (bibles, books, chapter, verse comparison, prefs)
+    api/             # Dio client + API wrappers mirroring js/fn.giwu/src/api/
+    models/          # Bible, Book, Verse data classes
+  android/
+  windows/
+  linux/
+  macos/
 
 php/api.giwu/        # Laravel backend
   app/Http/Controllers/Api/
@@ -61,6 +75,21 @@ npm run build      # Production build
 npm run test
 ```
 
+### Flutter app (`flutter/fn.giwu/`)
+```bash
+flutter pub get
+flutter run -d android        # Android emulator/device
+flutter run -d windows        # Windows desktop
+flutter run -d linux          # Linux desktop
+flutter run -d macos          # macOS desktop
+flutter test
+flutter build apk             # Release APK
+flutter build windows         # Release Windows build
+```
+
+> API base URL is configured in `lib/api/client.dart` via a `const baseUrl` constant.
+> Default: `http://api.giwu.test/`
+
 ### Backend (`php/api.giwu/`)
 ```bash
 composer install
@@ -92,6 +121,18 @@ php artisan test
 | Simultaneous comparison versions  | **1** (user picks one from sidebar) |
 | Database driver                   | **SQLite** (direct file connection) |
 
+### Flutter-specific decisions
+
+| Decision                          | Value                                                                 |
+|-----------------------------------|-----------------------------------------------------------------------|
+| Target platforms                  | Android (minSdk 21) + Windows / macOS / Linux desktop                 |
+| State management                  | **Riverpod** (`flutter_riverpod`)                                     |
+| HTTP client                       | **Dio** (mirrors Axios usage in JS frontend)                          |
+| Local persistence                 | **shared_preferences** — saves primaryBible, comparisonBible, book, chapter |
+| Verse comparison UX               | Draggable **bottom sheet** appears on verse tap (one version at a time) |
+| Navigation                        | Single `ReadPage` screen; bible/book/chapter picked from drawer/sheet |
+| API base URL                      | `http://api.giwu.test/`                                               |
+
 ---
 
 ## Open Decisions
@@ -109,3 +150,4 @@ php artisan test
 | UI layout & responsive rules | `.claude/docs/ui_layout.md` *(create when building ReadPage)*          |
 | API design conventions       | `.claude/docs/api_conventions.md` *(create when building controllers)* |
 | Database query patterns      | `.claude/docs/db_patterns.md` *(create when building models/queries)*  |
+| Flutter architecture         | `.claude/docs/flutter_architecture.md` *(create when building Flutter app)* |

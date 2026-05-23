@@ -1,13 +1,30 @@
-export default function BottomBar({ bookName, chapter, verse, versionName }) {
+export default function BottomBar({ bookName, chapter, verse, versionName, onOpenPanel }) {
   const ref = verse
     ? `${bookName?.toUpperCase()} ${chapter}:${verse} • ${(versionName ?? '').toUpperCase()}`
     : ''
 
   return (
     <footer className="app-footer" style={{ position: 'relative' }}>
-      <span className="footer-verse-ref">{ref}</span>
+      <span
+        className={`footer-verse-ref${verse ? ' footer-verse-ref--link' : ''}`}
+        onClick={verse ? onOpenPanel : undefined}
+        title={verse ? 'View parallel translations' : undefined}
+      >
+        {ref}
+      </span>
       <span className="footer-tagline">Built for seekers of truth</span>
       <div className="footer-icons">
+        <button
+          className="footer-icon-btn footer-panel-btn"
+          onClick={onOpenPanel}
+          title="Parallel translations"
+          aria-label="Open parallel translations"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="18" rx="1"/>
+            <rect x="14" y="3" width="7" height="18" rx="1"/>
+          </svg>
+        </button>
         <button className="footer-icon-btn" title="Bookmark" aria-label="Bookmark">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>

@@ -594,3 +594,159 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ── Mobile nav hamburger (hidden on desktop) ── */
+.navbar-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--gray-600);
+  border-radius: 6px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.navbar-hamburger:hover { background: var(--gray-100); color: var(--gray-900); }
+
+/* ── Mobile overlay (hidden on desktop) ─────── */
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 150;
+  display: none;
+}
+
+/* ── Panel drag handle (hidden on desktop) ──── */
+.panel-drag-handle {
+  display: none;
+  width: 40px;
+  height: 4px;
+  background: var(--gray-300);
+  border-radius: 2px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+/* ── Drawer close button (hidden on desktop) ── */
+.drawer-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--gray-500);
+  cursor: pointer;
+  padding: 0;
+}
+.drawer-close-btn:hover { background: var(--gray-100); color: var(--gray-700); }
+
+/* ── Footer panel toggle (hidden on desktop) ── */
+.footer-panel-btn { display: none; }
+
+/* ── Panel tabs close area (hidden on desktop) ── */
+.panel-tabs-close { display: none; }
+.footer-verse-ref--link { cursor: pointer; }
+
+/* ─────────────────────────────────────────────
+   Mobile layout (≤ 768px)
+   ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Hamburger: visible */
+  .navbar-hamburger { display: flex; }
+
+  /* Logo text: hidden to save navbar space */
+  .navbar-logo-text { display: none; }
+
+  /* Navbar: tighter padding */
+  .app-navbar { padding: 0 12px; }
+  .navbar-logo { gap: 0; }
+
+  /* Overlay: show when active */
+  .mobile-overlay.visible { display: block; }
+
+  /* Panel drag handle: show */
+  .panel-drag-handle { display: block; }
+
+  /* Close button: show inside drawers */
+  .drawer-close-btn { display: flex; }
+
+  /* Sidebar → fixed left drawer */
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(300px, 85vw);
+    height: 100dvh;
+    z-index: 200;
+    transform: translateX(-110%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .app-sidebar.open { transform: translateX(0); }
+
+  /* Sidebar close button: positioned at top-right */
+  .app-sidebar .drawer-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+  }
+
+  /* Sidebar header: push down for close button */
+  .sidebar-header { padding-top: 46px; }
+
+  /* Panel → fixed bottom sheet */
+  .app-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 72dvh;
+    z-index: 200;
+    border-left: none;
+    border-top: 1px solid var(--gray-200);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(110%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .app-panel.open { transform: translateY(0); }
+
+  /* Panel close button in tabs row */
+  .panel-tabs-close {
+    display: flex;
+    align-items: center;
+    padding-right: 8px;
+    flex-shrink: 0;
+  }
+
+  /* Main content: full width, mobile padding */
+  .chapter-content {
+    padding: 16px 18px 100px;
+    max-width: 100%;
+  }
+  .chapter-title { font-size: 20px; margin: 12px 0 18px; }
+  .verse-item { font-size: 15px; line-height: 1.7; }
+
+  /* Chapter nav: tighter */
+  .chapter-nav-bar { padding: 12px 0 0; }
+
+  /* Footer: hide tagline, show panel toggle */
+  .footer-tagline { display: none; }
+  .app-footer { padding: 0 16px; }
+  .footer-panel-btn { display: flex; }
+  .footer-verse-ref--link:hover { color: var(--primary); }
+}
+
+@media (max-width: 480px) {
+  .chapter-content { padding: 12px 14px 100px; }
+  .chapter-title { font-size: 18px; }
+  .verse-item { font-size: 14px; }
+}

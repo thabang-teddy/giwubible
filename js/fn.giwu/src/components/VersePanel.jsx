@@ -18,7 +18,7 @@ function VersionCard({ result }) {
   )
 }
 
-export default function VersePanel({ bibles, primaryBible, book, chapter, activeVerse }) {
+export default function VersePanel({ bibles, primaryBible, book, chapter, activeVerse, isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('verses')
   const [selectedTables, setSelectedTables] = useState(() => {
     try {
@@ -38,7 +38,6 @@ export default function VersePanel({ bibles, primaryBible, book, chapter, active
     [bibles, primaryBible]
   )
 
-  // Empty selectedTables means "all selected"
   const activeBibles = useMemo(
     () => selectedTables.length === 0
       ? comparableBibles
@@ -63,7 +62,9 @@ export default function VersePanel({ bibles, primaryBible, book, chapter, active
   }
 
   return (
-    <aside className="app-panel">
+    <aside className={`app-panel${isOpen ? ' open' : ''}`}>
+      <div className="panel-drag-handle" />
+
       <div className="panel-tabs">
         <div
           className={`panel-tab${activeTab === 'verses' ? ' active' : ''}`}
@@ -76,6 +77,14 @@ export default function VersePanel({ bibles, primaryBible, book, chapter, active
           onClick={() => setActiveTab('parallel-bibles')}
         >
           Parallel Bibles
+        </div>
+        <div className="panel-tabs-close">
+          <button className="drawer-close-btn" onClick={onClose} aria-label="Close panel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
       </div>
 

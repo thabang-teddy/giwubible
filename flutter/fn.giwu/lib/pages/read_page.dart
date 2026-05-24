@@ -57,9 +57,7 @@ class _ReadPageState extends ConsumerState<ReadPage> {
               Theme.of(ctx).brightness == Brightness.dark;
           return Container(
             decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF1E293B)
-                  : Colors.white,
+              color: isDark ? kDarkSurface : Colors.white,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(16)),
               boxShadow: [
@@ -296,7 +294,7 @@ class _BibleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? const Color(0xFF475569) : kDivider;
+    final borderColor = isDark ? kDarkBorder2 : kDivider;
 
     return GestureDetector(
       onTap: () => _show(context),
@@ -469,8 +467,8 @@ class _MainContent extends ConsumerWidget {
                                       fontSize: 15,
                                       height: 1.7,
                                       color: isDark
-                                          ? const Color(0xFFE2E8F0)
-                                          : const Color(0xFF1F2937),
+                                          ? const Color(0xFFE5E5E5)
+                                          : const Color(0xFF1F1F1F),
                                     ),
                                 children: [
                                   WidgetSpan(
@@ -531,7 +529,7 @@ class _BottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final borderColor =
-        isDark ? const Color(0xFF334155) : kDivider;
+        isDark ? kDarkBorder : kDivider;
     final ref =
         verse != null && bookName != null && versionAbbr != null
             ? '${bookName!.toUpperCase()} $chapter:$verse  •  ${versionAbbr!.toUpperCase()}'
@@ -539,7 +537,7 @@ class _BottomBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? kDarkSurface : Colors.white,
         border: Border(top: BorderSide(color: borderColor)),
       ),
       padding: EdgeInsets.fromLTRB(

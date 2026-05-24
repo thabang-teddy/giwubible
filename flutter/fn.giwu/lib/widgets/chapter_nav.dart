@@ -21,7 +21,7 @@ class ChapterNav extends ConsumerWidget {
     final max = maxChaptersForBook(book);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final borderColor =
-        isDark ? const Color(0xFF334155) : kDivider;
+        isDark ? kDarkBorder : kDivider;
 
     void change(int c) {
       ref.read(selectedChapterProvider.notifier).set(c);

@@ -45,7 +45,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
   Widget build(BuildContext context) {
     final selectedBook = ref.watch(selectedBookProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF1E293B) : kSidebarBg;
+    final bg = isDark ? kDarkSurface : kSidebarBg;
 
     final filtered = widget.books
         .where((b) => b.n.toLowerCase().contains(_query.toLowerCase()))
@@ -90,7 +90,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 prefixIcon: Icon(Icons.search, size: 15, color: kMuted),
                 isDense: true,
                 filled: true,
-                fillColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                fillColor: isDark ? kDarkBg : Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                   borderSide: const BorderSide(color: kDivider),

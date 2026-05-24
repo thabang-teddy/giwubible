@@ -51,7 +51,7 @@ class _AppPanelState extends ConsumerState<AppPanel>
     final activeVerse = ref.watch(activeVerseProvider);
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bg = isDark ? kDarkSurface : Colors.white;
 
     final comparableBibles =
         widget.bibles.where((b) => b.table != widget.primaryBible).toList();

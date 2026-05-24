@@ -44,8 +44,8 @@ class VerseList extends ConsumerWidget {
                       fontSize: 15,
                       height: 1.7,
                       color: isDark
-                          ? const Color(0xFFE2E8F0)
-                          : const Color(0xFF1F2937),
+                          ? const Color(0xFFE5E5E5)
+                          : const Color(0xFF1F1F1F),
                     ),
                 children: [
                   // Superscript-style verse number

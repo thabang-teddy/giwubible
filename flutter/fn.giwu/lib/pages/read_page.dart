@@ -222,13 +222,9 @@ class _ReadPageState extends ConsumerState<ReadPage> {
       leading: isDesktop
           ? Padding(
               padding: const EdgeInsets.all(10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: kPrimary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.menu_book,
-                    color: Colors.white, size: 18),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset('assets/icon.png', fit: BoxFit.contain),
               ),
             )
           : IconButton(
@@ -237,7 +233,7 @@ class _ReadPageState extends ConsumerState<ReadPage> {
                   _scaffoldKey.currentState?.openDrawer(),
               tooltip: 'Book list',
             ),
-      title: const Text('Giwu Bible'),
+      title: isDesktop ? null : const Text('Giwu Bible'),
       actions: [
         // Reset
         IconButton(

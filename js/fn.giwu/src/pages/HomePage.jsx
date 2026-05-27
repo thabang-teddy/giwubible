@@ -7,11 +7,11 @@ export default function HomePage() {
       justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '0 24px',
       fontFamily: 'var(--font-sans)',
     }}>
-      <div style={{
-        width: 52, height: 52, background: 'var(--primary)', borderRadius: 12,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 26, marginBottom: 20,
-      }}>📖</div>
+      <img
+        src="/app-icon.png"
+        alt="Giwu Bible"
+        style={{ width: 80, height: 80, marginBottom: 20, objectFit: 'contain', borderRadius: 16 }}
+      />
       <h1 style={{ fontSize: 36, fontWeight: 700, margin: '0 0 10px', color: 'var(--gray-900)' }}>
         Giwu Bible
       </h1>

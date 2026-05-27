@@ -38,7 +38,7 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
         </button>
 
         <Link to="/" className="navbar-logo">
-          <span className="navbar-logo-icon">📖</span>
+          <img src="/app-icon.png" alt="Giwu Bible" className="navbar-logo-img" />
           <span className="navbar-logo-text">Giwu Bible</span>
         </Link>
       </div>

@@ -78,16 +78,12 @@ body {
   text-decoration: none;
 }
 
-.navbar-logo-icon {
-  width: 28px;
-  height: 28px;
-  background: var(--primary);
-  border-radius: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 15px;
+.navbar-logo-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  display: block;
+  border-radius: 5px;
 }
 
 .navbar-actions { display: flex; align-items: center; gap: 8px; }
@@ -662,12 +658,12 @@ body {
   /* Hamburger: visible */
   .navbar-hamburger { display: flex; }
 
-  /* Logo text: hidden to save navbar space */
-  .navbar-logo-text { display: none; }
+  /* Logo image: slightly smaller on mobile */
+  .navbar-logo-img { width: 22px; height: 22px; }
 
   /* Navbar: tighter padding */
   .app-navbar { padding: 0 12px; }
-  .navbar-logo { gap: 0; }
+  .navbar-logo { gap: 6px; }
 
   /* Overlay: show when active */
   .mobile-overlay.visible { display: block; }

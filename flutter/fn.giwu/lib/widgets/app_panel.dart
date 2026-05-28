@@ -349,30 +349,57 @@ class _ParallelBiblesTab extends ConsumerWidget {
           ),
         ),
         ...comparableBibles.map((b) {
-          final isChecked =
-              selectedTables.isEmpty || selectedTables.contains(b.table);
+          final isDownloaded = b.downloaded;
+          final isChecked = isDownloaded &&
+              (selectedTables.isEmpty || selectedTables.contains(b.table));
           return CheckboxListTile(
             dense: true,
             value: isChecked,
-            onChanged: (_) => ref
-                .read(parallelBiblesProvider.notifier)
-                .toggle(b.table, allTables),
-            title: Text(b.version, style: const TextStyle(fontSize: 13)),
-            secondary: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: cs.primaryContainer,
-                borderRadius: BorderRadius.circular(4),
+            onChanged: isDownloaded
+                ? (_) => ref
+                    .read(parallelBiblesProvider.notifier)
+                    .toggle(b.table, allTables)
+                : null,
+            title: Text(
+              b.version,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDownloaded ? null : kMuted,
               ),
-              child: Text(
-                b.abbreviation,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onPrimaryContainer,
+            ),
+            secondary: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!isDownloaded)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      Icons.download_outlined,
+                      size: 13,
+                      color: kMuted,
+                    ),
+                  ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isDownloaded
+                        ? cs.primaryContainer
+                        : cs.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    b.abbreviation,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: isDownloaded
+                          ? cs.onPrimaryContainer
+                          : kMuted,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
             controlAffinity: ListTileControlAffinity.leading,
           );

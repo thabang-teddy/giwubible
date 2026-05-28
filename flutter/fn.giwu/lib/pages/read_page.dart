@@ -337,14 +337,18 @@ class _BibleButton extends StatelessWidget {
                 shrinkWrap: true,
                 children: bibles.map((b) {
                   final isSelected = b.table == primaryBible;
+                  final isDownloaded = b.downloaded;
                   final cs = Theme.of(ctx).colorScheme;
                   return ListTile(
                     dense: true,
+                    enabled: isDownloaded,
                     leading: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: cs.primaryContainer,
+                        color: isDownloaded
+                            ? cs.primaryContainer
+                            : cs.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -352,21 +356,27 @@ class _BibleButton extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: cs.onPrimaryContainer,
+                          color: isDownloaded
+                              ? cs.onPrimaryContainer
+                              : kMuted,
                         ),
                       ),
                     ),
                     title: Text(b.version,
                         style: const TextStyle(fontSize: 13)),
                     trailing: isSelected
-                        ? Icon(Icons.check,
-                            color: cs.primary, size: 16)
-                        : null,
+                        ? Icon(Icons.check, color: cs.primary, size: 16)
+                        : !isDownloaded
+                            ? Icon(Icons.download_outlined,
+                                size: 14, color: kMuted)
+                            : null,
                     selected: isSelected,
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      onChanged(b.table);
-                    },
+                    onTap: isDownloaded
+                        ? () {
+                            Navigator.of(ctx).pop();
+                            onChanged(b.table);
+                          }
+                        : null,
                   );
                 }).toList(),
               ),

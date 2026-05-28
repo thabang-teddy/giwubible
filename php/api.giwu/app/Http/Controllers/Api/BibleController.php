@@ -10,10 +10,13 @@ class BibleController extends Controller
 {
     public function index(): JsonResponse
     {
-        $bibles = BibleVersionKey::select('id', 'table', 'abbreviation', 'version', 'info_url')
-            ->orderBy('abbreviation')
-            ->get();
+        
+        return response()->json(['error' => 'No bible versions','code'  => 'INVALID_BIBLE'], 422);
+        
+        // $bibles = BibleVersionKey::select('id', 'table', 'abbreviation', 'version', 'info_url')
+        //     ->orderBy('abbreviation')
+        //     ->get();
 
-        return response()->json(['data' => $bibles]);
+        // return response()->json(['data' => $bibles]);
     }
 }

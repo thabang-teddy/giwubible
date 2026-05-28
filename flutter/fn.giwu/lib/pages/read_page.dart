@@ -408,9 +408,28 @@ class _MainContent extends ConsumerWidget {
           child: versesAsync.when(
             loading: () => const VerseListSkeleton(),
             error: (_, __) => Center(
-              child: Text(
-                'Failed to load chapter.',
-                style: TextStyle(color: kMuted),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Failed to load chapter.',
+                    style: TextStyle(color: kMuted),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => ref.invalidate(
+                      chapterVersesProvider(
+                        (
+                          bible: ref.read(primaryBibleProvider),
+                          book: ref.read(selectedBookProvider),
+                          chapter: ref.read(selectedChapterProvider),
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Retry'),
+                  ),
+                ],
               ),
             ),
             data: (verses) => CustomScrollView(

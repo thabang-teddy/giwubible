@@ -12,11 +12,21 @@ class VerseModel {
   });
 
   factory VerseModel.fromJson(Map<String, dynamic> json) => VerseModel(
-        b: (json['b'] as num).toInt(),
-        c: (json['c'] as num).toInt(),
-        v: (json['v'] as num).toInt(),
+        b: _toInt(json['b']),
+        c: _toInt(json['c']),
+        v: _toInt(json['v']),
         t: json['t'] as String,
       );
+
+  /// Safely converts a JSON value to int.
+  /// Handles both native JSON numbers (int/double) and string-encoded integers
+  /// that some PHP/PDO/SQLite combinations produce (e.g. `"1"` instead of `1`).
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.parse(value);
+    throw FormatException('Cannot convert $value (${value.runtimeType}) to int');
+  }
 }
 
 class ComparisonResult {

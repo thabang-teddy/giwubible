@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/bible.dart';
+import '../pages/settings_page.dart';
 import '../providers/comparison_provider.dart';
 import '../providers/prefs_provider.dart';
 import '../theme.dart';
@@ -53,12 +54,20 @@ class _AppPanelState extends ConsumerState<AppPanel>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? kDarkSurface : Colors.white;
 
+    // All other bibles — used for the selection list (shows downloaded + not).
     final comparableBibles =
         widget.bibles.where((b) => b.table != widget.primaryBible).toList();
+
+    // Only downloaded bibles can serve verses locally (or via API when online).
+    // Non-downloaded bibles silently fail when offline, so hide them from the
+    // parallel-verses tab to avoid a confusingly blank panel.
+    final downloadedComparable =
+        comparableBibles.where((b) => b.downloaded).toList();
+
     final selectedTables = ref.watch(parallelBiblesProvider);
     final activeBibles = selectedTables.isEmpty
-        ? comparableBibles
-        : comparableBibles
+        ? downloadedComparable
+        : downloadedComparable
             .where((b) => selectedTables.contains(b.table))
             .toList();
 
@@ -100,6 +109,18 @@ class _AppPanelState extends ConsumerState<AppPanel>
                     Tab(text: 'PARALLEL BIBLES'),
                   ],
                 ),
+              ),
+              // Settings
+              IconButton(
+                icon: Icon(Icons.settings_outlined, size: 16, color: kMuted),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsPage(),
+                  ),
+                ),
+                tooltip: 'Settings',
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(),
               ),
               if (widget.onClose != null)
                 Padding(
@@ -162,6 +183,19 @@ class _ParallelVersesTab extends ConsumerWidget {
           padding: const EdgeInsets.all(24),
           child: Text(
             'Click any verse to see parallel translations.',
+            style: TextStyle(color: kMuted, fontSize: 13),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    if (bibles.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'No other translations downloaded.\nDownload more from Settings → Manage translations.',
             style: TextStyle(color: kMuted, fontSize: 13),
             textAlign: TextAlign.center,
           ),

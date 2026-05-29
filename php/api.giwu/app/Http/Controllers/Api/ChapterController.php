@@ -12,36 +12,30 @@ class ChapterController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        
-        return response()->json(['error' => 'Unknown bible version','code'  => 'INVALID_BIBLE'], 422);
-        
-        // $request->validate([
-        //     'bible'   => 'required|string',
-        //     'book'    => 'required|integer|min:1',
-        //     'chapter' => 'required|integer|min:1',
-        // ]);
+        $request->validate([
+            'bible'   => 'required|string',
+            'book'    => 'required|integer|min:1',
+            'chapter' => 'required|integer|min:1',
+        ]);
 
-        // $table = $this->resolveTable($request->input('bible'));
-        // if (!$table) {
-        //     return response()->json(['error' => 'Unknown bible version', 'code' => 'INVALID_BIBLE'], 422);
-        // }
+        $table = $this->resolveTable($request->input('bible'));
+        if (!$table) {
+            return response()->json(['error' => 'Unknown bible version', 'code' => 'INVALID_BIBLE'], 422);
+        }
 
-        // $verses = DB::connection('bible_sqlite')
-        //     ->table($table)
-        //     ->select('b', 'c', 'v', 't')
-        //     ->where('b', $request->input('book'))
-        //     ->where('c', $request->input('chapter'))
-        //     ->orderBy('v')
-        //     ->get();
+        $verses = DB::connection('bible_sqlite')
+            ->table($table)
+            ->select('b', 'c', 'v', 't')
+            ->where('b', $request->input('book'))
+            ->where('c', $request->input('chapter'))
+            ->orderBy('v')
+            ->get();
 
-        // return response()->json(['data' => $verses]);
+        return response()->json(['data' => $verses]);
     }
 
     private function resolveTable(string $requested): ?string
     {
-        
-        return response()->json(['error' => 'Unknown bible version','code'  => 'INVALID_BIBLE'], 422);
-        
-        // return BibleVersionKey::where('table', $requested)->value('table');
+        return BibleVersionKey::where('table', $requested)->value('table');
     }
 }

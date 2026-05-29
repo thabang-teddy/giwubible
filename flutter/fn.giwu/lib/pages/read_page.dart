@@ -4,6 +4,7 @@ import '../models/bible.dart';
 import '../models/book.dart';
 import '../providers/bibles_provider.dart';
 import '../providers/chapter_provider.dart';
+import '../providers/database_provider.dart';
 import '../providers/prefs_provider.dart';
 import '../theme.dart';
 import '../widgets/app_panel.dart';
@@ -95,8 +96,10 @@ class _ReadPageState extends ConsumerState<ReadPage> {
     _sheetController = null;
   }
 
-  void _reset() {
-    ref.read(primaryBibleProvider.notifier).set('t_kjv');
+  Future<void> _reset() async {
+    final db = ref.read(bibleDatabaseProvider);
+    final bible = await db.resolveDefaultBible();
+    ref.read(primaryBibleProvider.notifier).set(bible);
     ref.read(selectedBookProvider.notifier).set(1);
     ref.read(selectedChapterProvider.notifier).set(1);
     _closeSheet();

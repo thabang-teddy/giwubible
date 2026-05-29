@@ -10,6 +10,7 @@ import '../data/bible_versions.dart';
 import '../models/bible.dart';
 import '../providers/database_provider.dart';
 import 'read_page.dart';
+import 'settings_page.dart';
 
 class WelcomePage extends ConsumerStatefulWidget {
   const WelcomePage({super.key});
@@ -368,6 +369,27 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
               onPressed: _working ? null : _uploadDatabase,
               icon: const Icon(Icons.upload_file_rounded),
               label: const Text('Upload SQLite Database'),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Center(
+            child: TextButton.icon(
+              onPressed: _working
+                  ? null
+                  : () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SettingsPage(),
+                        ),
+                      ),
+              icon: const Icon(Icons.settings_outlined, size: 14),
+              label: const Text('Settings'),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.55),
+                textStyle: const TextStyle(fontSize: 12),
+              ),
             ),
           ),
         ],

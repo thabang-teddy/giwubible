@@ -7,12 +7,18 @@ import 'client.dart';
 // Separate client with a longer receive timeout for large verse payloads.
 final _downloadClient = Dio(
   BaseOptions(
-    baseUrl: baseUrl,
+    baseUrl: kDefaultBaseUrl,
     headers: {'Accept': 'application/json'},
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(minutes: 5),
   ),
 );
+
+/// Updates the download client's base URL at runtime.
+/// Call alongside [setApiBaseUrl] whenever the server URL changes.
+void setDownloadBaseUrl(String url) {
+  _downloadClient.options.baseUrl = url;
+}
 
 class BibleDownloadPayload {
   final BibleModel bible;

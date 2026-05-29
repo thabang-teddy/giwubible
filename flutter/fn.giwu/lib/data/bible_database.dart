@@ -29,6 +29,16 @@ class BibleDatabase {
       onCreate: _createSchema,
     );
 
+    // Ensure app_settings exists on every open — CREATE IF NOT EXISTS is
+    // idempotent and backfills existing databases created before this table
+    // was introduced (onCreate only fires on first creation).
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''');
+
     // Run seeds on every open using INSERT OR IGNORE so they are safe to
     // call repeatedly and also backfill existing databases that were created
     // before seeding was introduced (onCreate only fires on first creation).
@@ -52,6 +62,12 @@ class BibleDatabase {
         b INTEGER PRIMARY KEY,
         n TEXT    NOT NULL,
         t TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
       )
     ''');
     await _seedBibles(db);
@@ -236,6 +252,57 @@ class BibleDatabase {
     }
 
     await markBibleDownloaded(bibleTable, downloaded: true);
+  }
+
+  // ── App settings ───────────────────────────────────────────────────────────
+
+  /// Returns the stored server URL, or `null` if the user has never changed it.
+  Future<String?> getServerUrl() => _getAppSetting('server_url');
+
+  /// Persists [url] as the server URL. Replaces any previously stored value.
+  Future<void> saveServerUrl(String url) async {
+    await _db.rawInsert(
+      "INSERT OR REPLACE INTO app_settings (key, value) VALUES ('server_url', ?)",
+      [url],
+    );
+  }
+
+  /// Resolves which bible to use as the primary bible when resetting.
+  ///
+  /// Priority:
+  ///   1. `app_settings.default_bible` — explicit user preference.
+  ///   2. `t_kjv` — if KJV has been downloaded.
+  ///   3. First downloaded bible (alphabetical by abbreviation).
+  ///   4. `t_kjv` — hard fallback when nothing is downloaded yet.
+  Future<String> resolveDefaultBible() async {
+    // 1. Explicit default saved in settings.
+    final stored = await _getAppSetting('default_bible');
+    if (stored != null) return stored;
+
+    // 2. KJV if already downloaded.
+    final kjvReady = await isBibleDownloaded('t_kjv');
+    if (kjvReady) return 't_kjv';
+
+    // 3. First downloaded bible.
+    final rows = await _db.rawQuery(
+      'SELECT "table" FROM bible_version_key '
+      'WHERE downloaded = 1 ORDER BY abbreviation ASC LIMIT 1',
+    );
+    if (rows.isNotEmpty) return rows.first['table'] as String;
+
+    // 4. Nothing downloaded — fall back to KJV (chapter shows empty state).
+    return 't_kjv';
+  }
+
+  // ── Private helpers ── (app settings) ─────────────────────────────────────
+
+  Future<String?> _getAppSetting(String key) async {
+    final rows = await _db.rawQuery(
+      'SELECT value FROM app_settings WHERE key = ? LIMIT 1',
+      [key],
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['value'] as String;
   }
 
   // ── Reset ──────────────────────────────────────────────────────────────────

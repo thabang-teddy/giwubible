@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/database_provider.dart';
 import '../providers/prefs_provider.dart';
+import '../providers/server_url_provider.dart';
 import 'welcome_page.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -11,6 +12,7 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(darkModeProvider);
+    final serverUrl = ref.watch(serverUrlProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -28,6 +30,22 @@ class SettingsPage extends ConsumerWidget {
             title: const Text('Dark mode'),
             value: isDark,
             onChanged: (_) => ref.read(darkModeProvider.notifier).toggle(),
+          ),
+          const Divider(height: 1),
+
+          // ── Connection ───────────────────────────────────────────────────
+          const _SectionHeader(label: 'CONNECTION'),
+          ListTile(
+            leading: const Icon(Icons.dns_outlined),
+            title: const Text('Server URL'),
+            subtitle: Text(
+              serverUrl,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12),
+            ),
+            trailing: const Icon(Icons.edit_outlined, size: 18),
+            onTap: () => _editServerUrl(context, ref, serverUrl),
           ),
           const Divider(height: 1),
 
@@ -73,6 +91,27 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  Future<void> _editServerUrl(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => _ServerUrlDialog(initial: current),
+    );
+
+    if (result == null) return;
+    if (!context.mounted) return;
+
+    await ref.read(serverUrlProvider.notifier).save(result);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Server URL updated.')),
+    );
+  }
+
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -111,6 +150,85 @@ class SettingsPage extends ConsumerWidget {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const WelcomePage()),
       (_) => false,
+    );
+  }
+}
+
+// ── Server URL edit dialog ─────────────────────────────────────────────────
+
+class _ServerUrlDialog extends StatefulWidget {
+  const _ServerUrlDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_ServerUrlDialog> createState() => _ServerUrlDialogState();
+}
+
+class _ServerUrlDialogState extends State<_ServerUrlDialog> {
+  late final TextEditingController _controller;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initial);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  String? _validate(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'URL cannot be empty.';
+    }
+    final uri = Uri.tryParse(value.trim());
+    if (uri == null || !uri.isAbsolute) {
+      return 'Enter a valid URL.';
+    }
+    if (uri.scheme != 'http' && uri.scheme != 'https') {
+      return 'URL must start with http:// or https://';
+    }
+    return null;
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() != true) return;
+    Navigator.of(context).pop(_controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Server URL'),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _controller,
+          autofocus: true,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(
+            labelText: 'Base URL',
+            hintText: 'http://api.giwu.test/api/',
+            helperText: 'Include the trailing slash.',
+          ),
+          validator: _validate,
+          onFieldSubmitted: (_) => _submit(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }

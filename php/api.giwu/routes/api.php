@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AppDownloadController;
 use App\Http\Controllers\Api\BibleController;
 use App\Http\Controllers\Api\BibleDownloadController;
 use App\Http\Controllers\Api\BookController;
@@ -12,3 +13,4 @@ Route::get('/bibles/{table}/download', [BibleDownloadController::class, 'downloa
 Route::get('/books', [BookController::class, 'index']);
 Route::get('/chapter', [ChapterController::class, 'index']);
 Route::get('/verse', [VerseController::class, 'show']);
+Route::get('/downloads/{filename}', [AppDownloadController::class, 'serve']);

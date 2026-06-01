@@ -23,4 +23,6 @@ $app->singleton(
     App\Exceptions\Handler::class
 );
 
+$app->register(\App\Providers\AppServiceProvider::class);
+
 return $app;

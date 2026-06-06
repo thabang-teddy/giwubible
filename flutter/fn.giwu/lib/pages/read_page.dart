@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/bible.dart';
 import '../models/book.dart';
+import '../providers/auth_provider.dart';
 import '../providers/bibles_provider.dart';
+import '../providers/bookmarks_provider.dart';
 import '../providers/chapter_provider.dart';
 import '../providers/database_provider.dart';
 import '../providers/prefs_provider.dart';
@@ -12,6 +14,8 @@ import '../widgets/app_sidebar.dart';
 import '../widgets/book_drawer.dart';
 import '../widgets/chapter_nav.dart';
 import '../widgets/verse_list.dart';
+import 'bookmarks_page.dart';
+import 'login_page.dart';
 
 class ReadPage extends ConsumerStatefulWidget {
   const ReadPage({super.key});
@@ -157,6 +161,8 @@ class _ReadPageState extends ConsumerState<ReadPage> {
       chapter: chapter,
       verse: activeVerse,
       versionAbbr: currentBible?.abbreviation,
+      primaryBible: primaryBible,
+      book: book,
       onOpenPanel: activeVerse != null && !isDesktop ? _openSheet : null,
     );
 
@@ -220,6 +226,10 @@ class _ReadPageState extends ConsumerState<ReadPage> {
     required bool isDark,
     required BibleModel? currentBible,
   }) {
+    final user = ref.watch(authProvider);
+    final bookmarksAsync = ref.watch(bookmarksProvider);
+    final bmCount = bookmarksAsync.valueOrNull?.length ?? 0;
+
     return AppBar(
       automaticallyImplyLeading: false,
       leading: isDesktop
@@ -256,6 +266,68 @@ class _ReadPageState extends ConsumerState<ReadPage> {
               ref.read(darkModeProvider.notifier).toggle(),
           tooltip: isDark ? 'Light mode' : 'Dark mode',
         ),
+        // Bookmarks
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.bookmark_border, size: 18),
+              tooltip: 'Bookmarks',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                    builder: (_) => const BookmarksPage()),
+              ),
+            ),
+            if (bmCount > 0)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      bmCount > 9 ? '9+' : '$bmCount',
+                      style: const TextStyle(
+                          fontSize: 8,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        // User / login
+        IconButton(
+          icon: Icon(
+            user != null
+                ? Icons.account_circle
+                : Icons.account_circle_outlined,
+            size: 18,
+            color: user != null
+                ? Theme.of(context).colorScheme.primary
+                : null,
+          ),
+          tooltip: user != null ? user.name : 'Sign in',
+          onPressed: () {
+            if (user != null) {
+              _showUserMenu(context, user.name, user.email);
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => LoginPage(
+                    onSuccess: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              );
+            }
+          },
+        ),
         // Bible version picker
         if (bibles.isNotEmpty)
           _BibleButton(
@@ -271,6 +343,52 @@ class _ReadPageState extends ConsumerState<ReadPage> {
           ),
         const SizedBox(width: 4),
       ],
+    );
+  }
+
+  void _showUserMenu(BuildContext context, String name, String email) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text(email,
+                      style: const TextStyle(fontSize: 12, color: kMuted)),
+                ],
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.bookmark_border),
+              title: const Text('Bookmarks'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                      builder: (_) => const BookmarksPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Sign out'),
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                await ref.read(authProvider.notifier).logout();
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -538,12 +656,14 @@ class _MainContent extends ConsumerWidget {
 
 // ── Bottom bar ─────────────────────────────────────────────────────────────
 
-class _BottomBar extends StatelessWidget {
+class _BottomBar extends ConsumerWidget {
   const _BottomBar({
     required this.bookName,
     required this.chapter,
     required this.verse,
     required this.versionAbbr,
+    required this.primaryBible,
+    required this.book,
     required this.onOpenPanel,
   });
 
@@ -551,17 +671,26 @@ class _BottomBar extends StatelessWidget {
   final int chapter;
   final int? verse;
   final String? versionAbbr;
+  final String primaryBible;
+  final int book;
   final VoidCallback? onOpenPanel;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor =
-        isDark ? kDarkBorder : kDivider;
-    final ref =
+    final borderColor = isDark ? kDarkBorder : kDivider;
+    final verseRef =
         verse != null && bookName != null && versionAbbr != null
             ? '${bookName!.toUpperCase()} $chapter:$verse  •  ${versionAbbr!.toUpperCase()}'
             : '';
+
+    final user = ref.watch(authProvider);
+    final bookmarksNotifier = ref.read(bookmarksProvider.notifier);
+    final isBookmarked = verse != null
+        ? ref.watch(bookmarksProvider).valueOrNull?.any(
+              (b) => b.matches(primaryBible, book, chapter, verse!),
+            ) ?? false
+        : false;
 
     return Container(
       decoration: BoxDecoration(
@@ -576,24 +705,22 @@ class _BottomBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Verse ref (tappable on mobile to open sheet)
           Expanded(
             child: GestureDetector(
               onTap: onOpenPanel,
               child: Text(
-                ref.isNotEmpty ? ref : 'BUILT FOR SEEKERS OF TRUTH',
+                verseRef.isNotEmpty ? verseRef : 'BUILT FOR SEEKERS OF TRUTH',
                 style: TextStyle(
                   fontSize: 11,
                   letterSpacing: 0.5,
                   fontWeight: FontWeight.w500,
-                  color: ref.isNotEmpty
+                  color: verseRef.isNotEmpty
                       ? Theme.of(context).colorScheme.primary
                       : kMuted,
                 ),
               ),
             ),
           ),
-          // Icons
           IconButton(
             icon: const Icon(Icons.menu_book_outlined, size: 16),
             onPressed: onOpenPanel,
@@ -603,11 +730,47 @@ class _BottomBar extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(Icons.bookmark_border, size: 16),
-            onPressed: null,
-            tooltip: 'Bookmark',
+            icon: Icon(
+              isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+              size: 16,
+              color: isBookmarked
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: isBookmarked ? 'Remove bookmark' : 'Bookmark verse',
             padding: const EdgeInsets.all(8),
             constraints: const BoxConstraints(),
+            onPressed: verse == null
+                ? null
+                : () async {
+                    if (user == null) {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => LoginPage(
+                            onSuccess: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    // Get verse text from the current chapter data
+                    final chapterKey = (
+                      bible: primaryBible,
+                      book: book,
+                      chapter: chapter,
+                    );
+                    final verses = ref
+                        .read(chapterVersesProvider(chapterKey))
+                        .valueOrNull;
+                    final verseText = verses
+                        ?.firstWhere(
+                          (v) => v.v == verse,
+                          orElse: () => verses.first,
+                        )
+                        .t ?? '';
+                    await bookmarksNotifier.toggle(
+                        primaryBible, book, chapter, verse!, verseText);
+                  },
           ),
           const SizedBox(width: 4),
           IconButton(

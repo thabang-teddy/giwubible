@@ -10,7 +10,7 @@ Future<List<VerseModel>> getChapter(
   int book,
   int chapter,
 ) async {
-  final res = await apiClient.get(
+  final res = await dio.get(
     'chapter',
     queryParameters: {'bible': bible, 'book': book, 'chapter': chapter},
   );

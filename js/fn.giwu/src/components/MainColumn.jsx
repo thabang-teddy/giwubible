@@ -1,7 +1,17 @@
 import { useChapter } from '../hooks/useChapter'
 import ChapterNav from './ChapterNav'
 
-export default function MainColumn({ primaryBible, bookName, book, chapter, onChapterChange, activeVerse, setActiveVerse }) {
+export default function MainColumn({
+  primaryBible,
+  bookName,
+  book,
+  chapter,
+  onChapterChange,
+  activeVerse,
+  setActiveVerse,
+  isBookmarked,
+  onBookmarkToggle,
+}) {
   const { verses, loading, error } = useChapter(primaryBible, book, chapter)
 
   return (
@@ -30,16 +40,36 @@ export default function MainColumn({ primaryBible, bookName, book, chapter, onCh
           </p>
         )}
 
-        {!loading && !error && verses.map((verse) => (
-          <p
-            key={verse.v}
-            className={`verse-item${activeVerse === verse.v ? ' active' : ''}`}
-            onClick={() => setActiveVerse(verse.v === activeVerse ? null : verse.v)}
-          >
-            <span className="verse-num">{verse.v}</span>
-            {verse.t}
-          </p>
-        ))}
+        {!loading && !error && verses.map((verse) => {
+          const bookmarked = isBookmarked?.(primaryBible, book, chapter, verse.v) ?? false
+          return (
+            <div
+              key={verse.v}
+              className={`verse-row${activeVerse === verse.v ? ' active' : ''}`}
+            >
+              <p
+                className="verse-item"
+                onClick={() => setActiveVerse(verse.v === activeVerse ? null : verse.v)}
+              >
+                <span className="verse-num">{verse.v}</span>
+                {verse.t}
+              </p>
+              {onBookmarkToggle && (
+                <button
+                  className={`verse-bookmark-btn${bookmarked ? ' bookmarked' : ''}`}
+                  onClick={() => onBookmarkToggle(verse.v, verse.t)}
+                  title={bookmarked ? 'Remove bookmark' : 'Bookmark this verse'}
+                  aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark this verse'}
+                  aria-pressed={bookmarked}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill={bookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

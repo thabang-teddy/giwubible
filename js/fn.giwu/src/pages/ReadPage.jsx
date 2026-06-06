@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
 import MainColumn from '../components/MainColumn'
 import VersePanel from '../components/VersePanel'
 import BottomBar from '../components/BottomBar'
 import { useBible } from '../hooks/useBible'
+import { useAuth } from '../hooks/useAuth'
+import { useBookmarks } from '../hooks/useBookmarks'
 
 function ls(key, fallback) {
   try {
@@ -17,13 +20,26 @@ function ls(key, fallback) {
 
 export default function ReadPage() {
   const { bibles, books, loading } = useBible()
+  const { user } = useAuth()
+  const { bookmarks, isBookmarked, toggle: toggleBookmark } = useBookmarks()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
-  const [primaryBible, setPrimaryBible] = useState(() => ls('giwu_bible', 't_kjv'))
-  const [book, setBook] = useState(() => ls('giwu_book', 1))
-  const [chapter, setChapter] = useState(() => ls('giwu_chapter', 1))
-  const [activeVerse, setActiveVerse] = useState(null)
+  const [primaryBible, setPrimaryBible] = useState(() => searchParams.get('bible') ?? ls('giwu_bible', 't_kjv'))
+  const [book, setBook] = useState(() => {
+    const b = searchParams.get('book')
+    return b ? Number(b) : ls('giwu_book', 1)
+  })
+  const [chapter, setChapter] = useState(() => {
+    const c = searchParams.get('chapter')
+    return c ? Number(c) : ls('giwu_chapter', 1)
+  })
+  const [activeVerse, setActiveVerse] = useState(() => {
+    const v = searchParams.get('verse')
+    return v ? Number(v) : null
+  })
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [panelOpen, setPanelOpen] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(() => !!searchParams.get('verse'))
 
   useEffect(() => { localStorage.setItem('giwu_bible', JSON.stringify(primaryBible)) }, [primaryBible])
   useEffect(() => { localStorage.setItem('giwu_book', JSON.stringify(book)) }, [book])
@@ -59,6 +75,11 @@ export default function ReadPage() {
     if (v !== null) setPanelOpen(true)
   }
 
+  const handleBookmarkToggle = async (verse, text) => {
+    if (!user) { navigate('/login'); return }
+    await toggleBookmark(primaryBible, book, chapter, verse, text)
+  }
+
   const closeAll = () => { setSidebarOpen(false); setPanelOpen(false) }
 
   const currentBook = books.find((b) => b.b === book)
@@ -72,6 +93,7 @@ export default function ReadPage() {
         onPrimaryBibleChange={handlePrimaryBibleChange}
         onReset={handleReset}
         onMenuOpen={() => setSidebarOpen(true)}
+        bookmarkCount={bookmarks.length}
       />
 
       <div
@@ -98,6 +120,8 @@ export default function ReadPage() {
           onChapterChange={handleChapterChange}
           activeVerse={activeVerse}
           setActiveVerse={handleVerseSelect}
+          isBookmarked={isBookmarked}
+          onBookmarkToggle={handleBookmarkToggle}
         />
 
         <VersePanel

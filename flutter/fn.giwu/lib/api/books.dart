@@ -7,7 +7,7 @@ import 'client.dart';
 
 Future<List<BookModel>> getBooks() async {
   try {
-    final res = await apiClient.get('books');
+    final res = await dio.get('books');
 
     if (kDebugMode) {
       debugPrint('[Books] status: ${res.statusCode}');

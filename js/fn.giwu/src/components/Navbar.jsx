@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 
-export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onReset, onMenuOpen }) {
-  const [open, setOpen] = useState(false)
+export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onReset, onMenuOpen, bookmarkCount = 0 }) {
+  const [versionOpen, setVersionOpen] = useState(false)
+  const [userOpen, setUserOpen] = useState(false)
   const [dark, setDark] = useState(() => {
     try { return localStorage.getItem('giwu_dark') === 'true' } catch { return false }
   })
-  const ref = useRef(null)
+  const versionRef = useRef(null)
+  const userRef = useRef(null)
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
 
   const current = bibles?.find((b) => b.table === primaryBible)
 
@@ -16,11 +21,19 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
   }, [dark])
 
   useEffect(() => {
-    if (!open) return
-    const handler = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    if (!versionOpen && !userOpen) return
+    const handler = (e) => {
+      if (!versionRef.current?.contains(e.target)) setVersionOpen(false)
+      if (!userRef.current?.contains(e.target)) setUserOpen(false)
+    }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+  }, [versionOpen, userOpen])
+
+  const handleLogout = async () => {
+    setUserOpen(false)
+    await logout()
+  }
 
   return (
     <header className="app-navbar">
@@ -74,12 +87,29 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
           )}
         </button>
 
-        <div ref={ref} style={{ position: 'relative' }}>
+        {/* Bookmarks */}
+        <Link
+          to="/bookmarks"
+          className="navbar-icon-btn"
+          title="Bookmarks"
+          aria-label="Bookmarks"
+          style={{ position: 'relative', textDecoration: 'none' }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+          </svg>
+          {bookmarkCount > 0 && (
+            <span className="bookmark-badge">{bookmarkCount > 9 ? '9+' : bookmarkCount}</span>
+          )}
+        </Link>
+
+        {/* Version picker */}
+        <div ref={versionRef} style={{ position: 'relative' }}>
           <button
             className="navbar-version-btn"
-            onClick={() => setOpen((o) => !o)}
+            onClick={() => setVersionOpen((o) => !o)}
             aria-haspopup="listbox"
-            aria-expanded={open}
+            aria-expanded={versionOpen}
           >
             {current?.abbreviation ?? '…'}
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 4 }}>
@@ -87,7 +117,7 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
             </svg>
           </button>
 
-          {open && (
+          {versionOpen && (
             <div className="version-dropdown" role="listbox">
               {bibles?.map((b) => (
                 <button
@@ -95,7 +125,7 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
                   className={`version-dropdown-item${b.table === primaryBible ? ' selected' : ''}`}
                   role="option"
                   aria-selected={b.table === primaryBible}
-                  onClick={() => { onPrimaryBibleChange(b.table); setOpen(false) }}
+                  onClick={() => { onPrimaryBibleChange(b.table); setVersionOpen(false) }}
                 >
                   <span className="version-dropdown-abbr">{b.abbreviation}</span>
                   <span className="version-dropdown-name">{b.version}</span>
@@ -106,6 +136,40 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
                   )}
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* User menu */}
+        <div ref={userRef} style={{ position: 'relative' }}>
+          <button
+            className="navbar-icon-btn"
+            onClick={() => user ? setUserOpen((o) => !o) : navigate('/login')}
+            title={user ? `Signed in as ${user.name}` : 'Sign in'}
+            aria-label={user ? 'User menu' : 'Sign in'}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ color: user ? 'var(--primary)' : 'currentColor' }}
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </button>
+
+          {userOpen && user && (
+            <div className="version-dropdown" style={{ right: 0, left: 'auto', minWidth: 160 }}>
+              <div style={{ padding: '8px 12px', fontSize: 12, color: 'var(--gray-400)', borderBottom: '1px solid var(--border)' }}>
+                {user.email}
+              </div>
+              <button
+                className="version-dropdown-item"
+                onClick={() => { setUserOpen(false); navigate('/bookmarks') }}
+              >
+                Bookmarks
+              </button>
+              <button className="version-dropdown-item" onClick={handleLogout}>
+                Sign out
+              </button>
             </div>
           )}
         </div>

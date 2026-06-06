@@ -1,10 +1,8 @@
 import 'package:dio/dio.dart';
 
-/// Default API base URL. Users can override this in Settings; the stored value
-/// is loaded from SQLite at startup and applied via [setApiBaseUrl].
 const kDefaultBaseUrl = 'http://api.giwu.test/api/';
 
-final apiClient = Dio(
+final dio = Dio(
   BaseOptions(
     baseUrl: kDefaultBaseUrl,
     headers: {'Accept': 'application/json'},
@@ -13,9 +11,16 @@ final apiClient = Dio(
   ),
 );
 
-/// Updates [apiClient]'s base URL at runtime.
-/// Call once at startup (after reading from the database) and again whenever
-/// the user saves a new server URL from Settings.
+/// Updates the API base URL at runtime.
 void setApiBaseUrl(String url) {
-  apiClient.options.baseUrl = url;
+  dio.options.baseUrl = url;
+}
+
+/// Attaches or removes the Bearer token from all subsequent requests.
+void setAuthToken(String? token) {
+  if (token != null) {
+    dio.options.headers['Authorization'] = 'Bearer $token';
+  } else {
+    dio.options.headers.remove('Authorization');
+  }
 }

@@ -9,7 +9,7 @@ Future<ComparisonResult?> getVerse(
   int chapter,
   int verse,
 ) async {
-  final res = await apiClient.get(
+  final res = await dio.get(
     'verse',
     queryParameters: {
       'bible': bible,

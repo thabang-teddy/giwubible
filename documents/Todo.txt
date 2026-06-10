@@ -1,11 +1,10 @@
 Bugs:
+live download links not working  
 Todo:
 Features:
 
 
-Please add the following feature
-login 
-bookmart 
+Please add the following feature 
 
 
 

@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://api.giwu.test',
+        target: 'https://api.giwu.test',
         changeOrigin: true,
       },
     },

@@ -88,7 +88,7 @@ flutter build windows         # Release Windows build
 ```
 
 > API base URL is configured in `lib/api/client.dart` via a `const baseUrl` constant.
-> Default: `http://api.giwu.test/`
+> Default: `https://api.giwu.test/`
 
 ### Backend (`php/api.giwu/`)
 ```bash
@@ -131,7 +131,7 @@ php artisan test
 | Local persistence                 | **shared_preferences** — saves primaryBible, comparisonBible, book, chapter |
 | Verse comparison UX               | Draggable **bottom sheet** appears on verse tap (one version at a time) |
 | Navigation                        | Single `ReadPage` screen; bible/book/chapter picked from drawer/sheet |
-| API base URL                      | `http://api.giwu.test/`                                               |
+| API base URL                      | `https://api.giwu.test/`                                               |
 
 ---
 

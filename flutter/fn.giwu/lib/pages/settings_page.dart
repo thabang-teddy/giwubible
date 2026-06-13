@@ -212,7 +212,7 @@ class _ServerUrlDialogState extends State<_ServerUrlDialog> {
           keyboardType: TextInputType.url,
           decoration: const InputDecoration(
             labelText: 'Base URL',
-            hintText: 'http://api.giwu.test/api/',
+            hintText: 'https://api.giwu.test/api/',
             helperText: 'Include the trailing slash.',
           ),
           validator: _validate,

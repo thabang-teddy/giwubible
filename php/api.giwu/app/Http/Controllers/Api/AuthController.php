@@ -56,4 +56,24 @@ class AuthController extends Controller
     {
         return response()->json($request->user());
     }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $data = $request->validate([
+            'name'     => ['sometimes', 'required', 'string', 'max:255'],
+            'email'    => ['sometimes', 'required', 'email', 'unique:users,email,' . $user->id],
+            'password' => ['sometimes', 'required', 'confirmed', Password::min(8)],
+        ]);
+
+        if (isset($data['password'])) {
+            $data['password'] = bcrypt($data['password']);
+        }
+
+        $user->update($data);
+
+        return response()->json($user->fresh());
+    }
 }

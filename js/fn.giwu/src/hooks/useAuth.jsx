@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react'
-import { me, login as apiLogin, register as apiRegister, logout as apiLogout } from '../api/auth'
+import { me, login as apiLogin, register as apiRegister, logout as apiLogout, updateProfile as apiUpdateProfile } from '../api/auth'
 
 const TOKEN_KEY = 'giwu_token'
 
@@ -38,8 +38,14 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  const updateProfile = useCallback(async (fields) => {
+    const updated = await apiUpdateProfile(fields)
+    setUser(updated)
+    return updated
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

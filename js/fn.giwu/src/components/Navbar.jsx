@@ -163,6 +163,12 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
               </div>
               <button
                 className="version-dropdown-item"
+                onClick={() => { setUserOpen(false); navigate('/profile') }}
+              >
+                Profile
+              </button>
+              <button
+                className="version-dropdown-item"
                 onClick={() => { setUserOpen(false); navigate('/bookmarks') }}
               >
                 Bookmarks

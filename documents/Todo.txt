@@ -1,10 +1,17 @@
 Bugs:
+home sign in is still showing when the user is logged in
 live download links not working  
+
 Todo:
+change dev port to 6000
+make the share work and replace the bookmark next to it with a download icon (link to download page)
+set the API URL deferent for dev, and live
+add app to Appstore and Microsoft (adda link)
+Remove api from the link
+
+mobile 
+
 Features:
-
-
-Please add the following feature 
 
 
 
@@ -12,9 +19,3 @@ Name Change
 * TrueVinePages From John 15:1 — "I am the true vine." Suggests the app keeps readers connected to Jesus as the source of life.
 
 
-
-start with empty local db
-Add a welcome page with cards of bibles the user can select and after selection download the bibles from the Laravel api or upload the SQLite database
-after uploading the SQLite database, use it to sync to local db
-in the local db bible list add a flag that will indicate weather the bible is downloaded or not
-Please make sure the app uses the server if there is a problem getting data from the local db

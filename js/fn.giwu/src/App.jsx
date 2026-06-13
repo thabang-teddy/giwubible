@@ -5,6 +5,7 @@ import ReadPage from './pages/ReadPage'
 import DownloadPage from './pages/DownloadPage'
 import LoginPage from './pages/LoginPage'
 import BookmarksPage from './pages/BookmarksPage'
+import ProfilePage from './pages/ProfilePage'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/download" element={<DownloadPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

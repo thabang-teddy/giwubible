@@ -1,5 +1,4 @@
 Bugs:
-home sign in is still showing when the user is logged in
 live download links not working  
 
 Todo:
@@ -17,5 +16,6 @@ Features:
 
 Name Change
 * TrueVinePages From John 15:1 — "I am the true vine." Suggests the app keeps readers connected to Jesus as the source of life.
+
 
 

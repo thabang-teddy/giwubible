@@ -6,48 +6,54 @@ Multi-version Bible reader. Users read a primary chapter (KJV by default) and cl
 
 ## Tech Stack
 
-| Layer              | Technology                                                      |
-|--------------------|-----------------------------------------------------------------|
-| Web Frontend       | React.js + Bootstrap 5                                          |
-| Mobile/Desktop App | Flutter (Android + Windows/macOS/Linux)                         |
-| Backend            | Laravel 11 (REST API)                                           |
-| Database           | SQLite (`bible-sqlite.db`) — Laravel `sqlite` driver, read-only |
-| Auth               | None (v1 is stateless)                                          |
+| Layer              | Technology                                                                     |
+|--------------------|--------------------------------------------------------------------------------|
+| Web Frontend       | React 19 via **Inertia.js**, served from Laravel (`laravel/resources/js`), Bootstrap 5 |
+| Mobile/Desktop App | Flutter (Android + Windows/macOS/Linux)                                        |
+| Backend            | Laravel 10 — Inertia (web) **and** a JSON REST API (`/api`, for Flutter)       |
+| Database           | SQLite (`bible-sqlite.db`, read-only) + `database.sqlite` (users/bookmarks)    |
+| Auth               | Sanctum: session/cookie for web (Inertia), personal-access tokens for `/api` (Flutter) |
+
+> The web app and the JSON API now live in a **single Laravel app at `laravel/`**.
+> React is rendered through Inertia (no standalone SPA); `routes/api.php` stays a
+> token-auth JSON API for the Flutter client only.
 
 ---
 
 ## Key Directories
 
 ```
-js/fn.giwu/          # React frontend
-  src/
-    pages/           # HomePage, ReadPage
-    components/      # Sidebar, MainColumn, VersePanel, BookSelector, BibleSelector
-    hooks/           # useBible, useChapter, useVerseComparison
-    api/             # Axios client & API wrappers
+laravel/             # Single Laravel app: Inertia/React web + JSON API
+  app/
+    Http/Controllers/
+      Web/           # Inertia controllers -> Inertia::render()
+                     #   Home, Read, Download, Auth, Bookmark, Profile
+      Api/           # JSON controllers for Flutter (unchanged shapes)
+                     #   Bible, Book, Chapter, Verse, Auth, Bookmark, *Download
+    Http/Middleware/HandleInertiaRequests.php   # shares auth.user, bookmarks, flash, ziggy
+    Repositories/BibleRepository.php            # shared bible queries (Web + Api)
+  resources/
+    js/
+      app.jsx        # createInertiaApp entry
+      Pages/         # Home, Read, Login, Bookmarks, Profile, Download (Inertia pages)
+      Components/    # Navbar, Sidebar, MainColumn, VersePanel, BottomBar, ChapterNav
+      hooks/         # useAuth, useBookmarks (Inertia) + useChapter, useAllVerseComparisons (XHR)
+      api/           # axios client + chapter/verse wrappers (in-page reader XHR)
+    css/app.css      # ported stylesheet
+    views/app.blade.php   # Inertia root view
+  routes/
+    web.php          # Inertia pages (session/cookie auth)
+    api.php          # JSON API for Flutter (Sanctum tokens) — DO NOT change shapes
+  database/
+    bible-sqlite.db  # Source data (read-only, query directly, never migrate)
+    database.sqlite  # App DB: users + bookmarks
 
-flutter/fn.giwu/     # Flutter mobile/desktop app
+flutter/fn.giwu/     # Flutter mobile/desktop app (consumes /api — unchanged)
   lib/
     main.dart        # Entry point — ProviderScope + MaterialApp
-    pages/           # ReadPage (primary screen)
-    widgets/         # VerseList, VerseCard, BibleSelector, BookSelector, ChapterNav, ComparisonSheet
-    providers/       # Riverpod providers (bibles, books, chapter, verse comparison, prefs)
-    api/             # Dio client + API wrappers mirroring js/fn.giwu/src/api/
-    models/          # Bible, Book, Verse data classes
-  android/
-  windows/
-  linux/
-  macos/
-
-php/api.giwu/        # Laravel backend
-  app/Http/Controllers/Api/
-    BibleController   # /bibles list
-    BookController    # /books list
-    ChapterController # /chapter verses
-    VerseController   # /verse in comparison version
-  routes/api.php
-  database/
-    bible-sqlite.db   # Source data — do not migrate, query directly
+    api/             # Dio client + API wrappers (base URL -> the laravel/ app's /api)
+    providers/ widgets/ models/ pages/
+  android/ windows/ linux/ macos/
 ```
 
 ---
@@ -67,13 +73,25 @@ php/api.giwu/        # Laravel backend
 
 ## Build & Run Commands
 
-### Frontend (`js/fn.giwu/`)
+### Web app + API (`laravel/`)
 ```bash
+composer install
 npm install
-npm run dev        # Vite dev server
-npm run build      # Production build
-npm run test
+cp .env.example .env        # then set BIBLE_DB to the absolute bible-sqlite.db path
+php artisan key:generate
+
+# Development (two terminals)
+php artisan serve           # http://localhost:8000 (serves Inertia web + /api)
+npm run dev                 # Vite HMR for React
+
+npm run build               # Production asset build (public/build)
+php artisan test            # PHPUnit suite
 ```
+
+> Web pages are Inertia/React (`resources/js/Pages`). The reader still fetches
+> chapters and verse comparisons on-demand via `/api` XHR (the in-page
+> interactivity exception) — those endpoints are public. `routes/api.php` is the
+> Flutter JSON API and its response shapes must not change.
 
 ### Flutter app (`flutter/fn.giwu/`)
 ```bash
@@ -90,23 +108,15 @@ flutter build windows         # Release Windows build
 > API base URL is configured in `lib/api/client.dart` via a `const baseUrl` constant.
 > Default: `https://api.giwu.test/`
 
-### Backend (`php/api.giwu/`)
-```bash
-composer install
-cp .env.example .env
-# Set DB_CONNECTION=sqlite
-# Set DB_DATABASE=/absolute/path/to/bible-sqlite.db
-php artisan key:generate
-php artisan serve  # http://localhost:8000
-php artisan test
-```
+> The backend lives in the same `laravel/` folder as the web app (see above).
+> There is no longer a separate `php/api.giwu/` app.
 
 ---
 
 ## Data Model (SQLite — read-only)
 
 - **`bible_version_key`** — one row per translation; `table` column is the query target (e.g. `t_kjv`)
-- **`key_english`** — book list (`b` = book ID, `n` = name, `t` = OT/NT)
+- **`key_english`** — book list (`b` = book ID, `n` = name). NB: this data file has **no `t` column**; a legacy `select('b','n','t')` degrades to a junk `"t":"t"` field via a SQLite quoted-identifier quirk, preserved for API compatibility (see `MIGRATION.md`)
 - **`t_{abbreviation}`** — per-translation verse tables; columns: `b` (book), `c` (chapter), `v` (verse), `t` (text)
 
 > Do not run migrations against `bible-sqlite.db`. It is a static data file.

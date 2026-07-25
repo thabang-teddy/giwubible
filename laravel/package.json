@@ -1,0 +1,22 @@
+{
+    "name": "giwu-bible",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "lint": "eslint resources/js --ext .js,.jsx"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-react": "^4.3.4",
+        "laravel-vite-plugin": "^1.0.5",
+        "vite": "^6.0.0"
+    },
+    "dependencies": {
+        "@inertiajs/react": "^2.0.0",
+        "axios": "^1.16.0",
+        "bootstrap": "^5.3.8",
+        "react": "^19.2.5",
+        "react-dom": "^19.2.5"
+    }
+}

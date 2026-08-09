@@ -2,13 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/client.dart';
 import '../api/download.dart';
+import '../api/voice_download.dart';
 import '../data/bible_database.dart';
 
 /// Manages the API server URL.
 ///
 /// The initial value is loaded from [BibleDatabase] in [main] and passed as a
 /// provider override. Calling [save] persists the new URL to the database and
-/// immediately updates both Dio clients so subsequent requests use it.
+/// immediately updates every Dio client so subsequent requests use it.
 class ServerUrlNotifier extends StateNotifier<String> {
   ServerUrlNotifier(this._db, String initial) : super(initial);
 
@@ -20,6 +21,7 @@ class ServerUrlNotifier extends StateNotifier<String> {
     await _db.saveServerUrl(normalized);
     setApiBaseUrl(normalized);
     setDownloadBaseUrl(normalized);
+    setVoiceBaseUrl(normalized);
     state = normalized;
   }
 

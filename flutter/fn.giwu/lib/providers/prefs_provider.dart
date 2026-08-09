@@ -88,6 +88,74 @@ final selectedChapterProvider =
 
 final activeVerseProvider = StateProvider<int?>((ref) => null);
 
+// ── Read-aloud: speech rate ────────────────────────────────────────────────
+
+/// User-facing speed multiplier — 1.0 is the voice's natural pace.
+const List<double> kSpeechRatePresets = [0.75, 1.0, 1.25, 1.5, 2.0];
+
+class SpeechRateNotifier extends StateNotifier<double> {
+  SpeechRateNotifier(SharedPreferences prefs)
+      : _prefs = prefs,
+        super(prefs.getDouble('giwu_tts_rate') ?? 1.0);
+
+  final SharedPreferences _prefs;
+
+  void set(double multiplier) {
+    state = multiplier;
+    _prefs.setDouble('giwu_tts_rate', multiplier);
+  }
+
+  /// Steps to the next preset, wrapping back to the slowest.
+  void cycle() {
+    final i = kSpeechRatePresets.indexOf(state);
+    set(kSpeechRatePresets[(i + 1) % kSpeechRatePresets.length]);
+  }
+}
+
+final speechRateProvider = StateNotifierProvider<SpeechRateNotifier, double>(
+  (ref) => SpeechRateNotifier(ref.read(sharedPreferencesProvider)),
+);
+
+// ── Read-aloud: announce verse numbers ─────────────────────────────────────
+
+class AnnounceVerseNumbersNotifier extends StateNotifier<bool> {
+  AnnounceVerseNumbersNotifier(SharedPreferences prefs)
+      : _prefs = prefs,
+        super(prefs.getBool('giwu_tts_numbers') ?? false);
+
+  final SharedPreferences _prefs;
+
+  void set(bool value) {
+    state = value;
+    _prefs.setBool('giwu_tts_numbers', value);
+  }
+}
+
+final announceVerseNumbersProvider =
+    StateNotifierProvider<AnnounceVerseNumbersNotifier, bool>(
+  (ref) => AnnounceVerseNumbersNotifier(ref.read(sharedPreferencesProvider)),
+);
+
+// ── Read-aloud: continue into the next chapter ─────────────────────────────
+
+class ContinueToNextChapterNotifier extends StateNotifier<bool> {
+  ContinueToNextChapterNotifier(SharedPreferences prefs)
+      : _prefs = prefs,
+        super(prefs.getBool('giwu_tts_continue') ?? false);
+
+  final SharedPreferences _prefs;
+
+  void set(bool value) {
+    state = value;
+    _prefs.setBool('giwu_tts_continue', value);
+  }
+}
+
+final continueToNextChapterProvider =
+    StateNotifierProvider<ContinueToNextChapterNotifier, bool>(
+  (ref) => ContinueToNextChapterNotifier(ref.read(sharedPreferencesProvider)),
+);
+
 // ── Parallel bibles selection ──────────────────────────────────────────────
 
 class ParallelBiblesNotifier extends StateNotifier<List<String>> {

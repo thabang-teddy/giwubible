@@ -13,6 +13,8 @@ class AppDownloadController extends Controller
     private const ALLOWED = [
         'giwu-bible-android.apk',
         'giwu-bible-windows-setup.exe',
+        // Offline read-aloud voice (Piper VITS), fetched once by the Flutter app.
+        'vits-piper-en_US-amy-low.tar.bz2',
     ];
 
     public function serve(string $filename): BinaryFileResponse

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
-const kDefaultBaseUrl = 'https://api.giwu.co.za/api/';
+const kDefaultBaseUrl = 'https://giwu.co.za/api/';  // live server
+// const kDefaultBaseUrl = 'http://giwubible.test/api/'; // dev server 
 
 final dio = Dio(
   BaseOptions(

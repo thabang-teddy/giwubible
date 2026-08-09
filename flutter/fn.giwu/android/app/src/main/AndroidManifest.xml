@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required in every build variant: the app downloads bible translations
+         and the read-aloud voice, signs in, and syncs bookmarks. The Flutter
+         template only declares this for debug/profile, which left release
+         builds with no network access at all. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="Giwu Bible"
         android:name="${applicationName}"

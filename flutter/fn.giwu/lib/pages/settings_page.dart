@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/database_provider.dart';
 import '../providers/prefs_provider.dart';
 import '../providers/server_url_provider.dart';
+import '../providers/voice_model_provider.dart';
+import '../widgets/voice_download_sheet.dart';
 import 'welcome_page.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -13,6 +15,10 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(darkModeProvider);
     final serverUrl = ref.watch(serverUrlProvider);
+    final rate = ref.watch(speechRateProvider);
+    final announceNumbers = ref.watch(announceVerseNumbersProvider);
+    final continueToNext = ref.watch(continueToNextChapterProvider);
+    final voice = ref.watch(voiceModelProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -30,6 +36,62 @@ class SettingsPage extends ConsumerWidget {
             title: const Text('Dark mode'),
             value: isDark,
             onChanged: (_) => ref.read(darkModeProvider.notifier).toggle(),
+          ),
+          const Divider(height: 1),
+
+          // ── Read aloud ───────────────────────────────────────────────────
+          const _SectionHeader(label: 'READ ALOUD'),
+          ListTile(
+            leading: const Icon(Icons.record_voice_over_outlined),
+            title: const Text('Reading voice'),
+            subtitle: Text(
+              voice.status == VoiceInstallStatus.installed
+                  ? 'Installed · ${_formatSize(voice.sizeBytes)} · works offline'
+                  : 'Not installed · $kVoiceDownloadSize one-time download',
+              style: const TextStyle(fontSize: 12),
+            ),
+            trailing: voice.status == VoiceInstallStatus.installed
+                ? TextButton(
+                    onPressed: () => _confirmRemoveVoice(context, ref),
+                    child: const Text('Remove'),
+                  )
+                : TextButton(
+                    onPressed: () => showVoiceDownloadSheet(context),
+                    child: const Text('Download'),
+                  ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.speed_outlined),
+            title: const Text('Reading speed'),
+            trailing: DropdownButton<double>(
+              value: rate,
+              underline: const SizedBox.shrink(),
+              items: [
+                for (final preset in kSpeechRatePresets)
+                  DropdownMenuItem(value: preset, child: Text('${preset}x')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(speechRateProvider.notifier).set(value);
+                }
+              },
+            ),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.format_list_numbered),
+            title: const Text('Announce verse numbers'),
+            subtitle: const Text('Say "Verse 3" before each verse'),
+            value: announceNumbers,
+            onChanged: (value) =>
+                ref.read(announceVerseNumbersProvider.notifier).set(value),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.playlist_play),
+            title: const Text('Continue to next chapter'),
+            subtitle: const Text('Keep reading when a chapter ends'),
+            value: continueToNext,
+            onChanged: (value) =>
+                ref.read(continueToNextChapterProvider.notifier).set(value),
           ),
           const Divider(height: 1),
 
@@ -84,6 +146,37 @@ class SettingsPage extends ConsumerWidget {
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+
+  static String _formatSize(int bytes) {
+    const mb = 1024 * 1024;
+    if (bytes >= mb) return '${(bytes / mb).toStringAsFixed(0)} MB';
+    return '${(bytes / 1024).toStringAsFixed(0)} KB';
+  }
+
+  Future<void> _confirmRemoveVoice(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove reading voice?'),
+        content: const Text(
+          'Read aloud will stop working until you download the voice again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    await ref.read(voiceModelProvider.notifier).remove();
+  }
 
   void _openWelcomePage(BuildContext context) {
     Navigator.of(context).push(

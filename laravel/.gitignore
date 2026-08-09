@@ -17,6 +17,7 @@
 /public/build
 /public/downloads/*.apk
 /public/downloads/*.exe
+/public/downloads/*.tar.bz2
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage

@@ -1,13 +1,10 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'api/client.dart';
 import 'api/download.dart';
+import 'api/voice_download.dart';
 import 'data/bible_database.dart';
 import 'pages/read_page.dart';
 import 'pages/welcome_page.dart';
@@ -18,11 +15,6 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
 
   final prefs = await SharedPreferences.getInstance();
   final bibleDb = await BibleDatabase.open();
@@ -35,6 +27,7 @@ Future<void> main() async {
   final serverUrl = storedUrl ?? kDefaultBaseUrl;
   setApiBaseUrl(serverUrl);
   setDownloadBaseUrl(serverUrl);
+  setVoiceBaseUrl(serverUrl);
 
   runApp(
     ProviderScope(

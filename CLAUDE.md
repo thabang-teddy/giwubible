@@ -9,7 +9,7 @@ Multi-version Bible reader. Users read a primary chapter (KJV by default) and cl
 | Layer              | Technology                                                                     |
 |--------------------|--------------------------------------------------------------------------------|
 | Web Frontend       | React 19 via **Inertia.js**, served from Laravel (`laravel/resources/js`), Bootstrap 5 |
-| Mobile/Desktop App | Flutter (Android + Windows/macOS/Linux)                                        |
+| Mobile App         | Flutter (Android only)                                                         |
 | Backend            | Laravel 10 — Inertia (web) **and** a JSON REST API (`/api`, for Flutter)       |
 | Database           | SQLite (`bible-sqlite.db`, read-only) + `database.sqlite` (users/bookmarks)    |
 | Auth               | Sanctum: session/cookie for web (Inertia), personal-access tokens for `/api` (Flutter) |
@@ -48,12 +48,12 @@ laravel/             # Single Laravel app: Inertia/React web + JSON API
     bible-sqlite.db  # Source data (read-only, query directly, never migrate)
     database.sqlite  # App DB: users + bookmarks
 
-flutter/fn.giwu/     # Flutter mobile/desktop app (consumes /api — unchanged)
+flutter/fn.giwu/     # Flutter Android app (consumes /api — unchanged)
   lib/
     main.dart        # Entry point — ProviderScope + MaterialApp
     api/             # Dio client + API wrappers (base URL -> the laravel/ app's /api)
     providers/ widgets/ models/ pages/
-  android/ windows/ linux/ macos/
+  android/
 ```
 
 ---
@@ -97,12 +97,9 @@ php artisan test            # PHPUnit suite
 ```bash
 flutter pub get
 flutter run -d android        # Android emulator/device
-flutter run -d windows        # Windows desktop
-flutter run -d linux          # Linux desktop
-flutter run -d macos          # macOS desktop
 flutter test
 flutter build apk             # Release APK
-flutter build windows         # Release Windows build
+flutter build apk --split-per-abi   # Smaller per-ABI release APKs
 ```
 
 > API base URL is configured in `lib/api/client.dart` via a `const baseUrl` constant.
@@ -135,7 +132,7 @@ flutter build windows         # Release Windows build
 
 | Decision                          | Value                                                                 |
 |-----------------------------------|-----------------------------------------------------------------------|
-| Target platforms                  | Android (minSdk 21) + Windows / macOS / Linux desktop                 |
+| Target platforms                  | Android only (minSdk 21)                                              |
 | State management                  | **Riverpod** (`flutter_riverpod`)                                     |
 | HTTP client                       | **Dio** (mirrors Axios usage in JS frontend)                          |
 | Local persistence                 | **shared_preferences** — saves primaryBible, comparisonBible, book, chapter |

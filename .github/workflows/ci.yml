@@ -6,8 +6,9 @@
 #            caches (config/route/view) actually build. Runs on the PHP version
 #            the SERVER runs, not the minimum composer.json allows — see the
 #            CPANEL_PHP_VERSION note below.
-#   js       The Vite build. If the bundle does not build, the artefact would
-#            ship a stale one, because public/build is committed in source.
+#   js       The Vite build. public/build is git-ignored, so the bundle the
+#            server runs is the one THIS job proves builds — nothing else
+#            produces it.
 #   flutter  `flutter analyze` and `flutter test` for the Android app.
 #   cpanel   Builds the deploy artefact and publishes it for the account to
 #            pull. staging -> staging host, master -> production host.
@@ -113,10 +114,11 @@ jobs:
         working-directory: laravel
         run: npm ci
 
-      # There is no lint step on purpose: package.json declares an `eslint`
-      # script but eslint is not a dependency and there is no config, so the
-      # script cannot run. Add both, then add the step — do not add a step that
-      # passes because the tool is missing.
+      # There is no lint step on purpose, and no `lint` script either — it was
+      # removed because it invoked an eslint that is not a dependency and has
+      # no config. Adding eslint back means adding the dependency, a config,
+      # and this step, in that order. Do not add a step that passes because the
+      # tool is missing.
       - name: Build
         working-directory: laravel
         run: npm run build
@@ -230,9 +232,9 @@ jobs:
           cache: npm
           cache-dependency-path: laravel/package-lock.json
 
-      # Rebuilt rather than trusted. public/build is committed in source, so an
-      # artefact that reused it would ship whatever was last built on someone's
-      # laptop.
+      # public/build is git-ignored, so the checkout above has no bundle at all
+      # and this step is the only thing that produces one. That is the point:
+      # the artefact can never ship whatever was last built on someone's laptop.
       - name: Build the front-end bundle
         working-directory: laravel
         run: |
@@ -240,8 +242,8 @@ jobs:
           npm run build
 
       # Prune what the server has no use for, then force-add what the source
-      # gitignore excludes. `git add -Af` is required for vendor/ precisely
-      # BECAUSE it is ignored in source.
+      # gitignore excludes. `git add -Af` is required for vendor/ AND
+      # public/build precisely BECAUSE both are ignored in source.
       #
       # flutter/ is 100+ MB of Android tooling the web host never executes.
       # documents/ and tests/ likewise. bible-sqlite.db (42 MB) STAYS: it is the

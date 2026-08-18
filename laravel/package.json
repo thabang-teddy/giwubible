@@ -4,8 +4,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build",
-        "lint": "eslint resources/js --ext .js,.jsx"
+        "build": "vite build"
     },
     "devDependencies": {
         "@vitejs/plugin-react": "^4.3.4",

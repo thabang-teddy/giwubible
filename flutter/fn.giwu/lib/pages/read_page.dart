@@ -133,7 +133,7 @@ class _ReadPageState extends ConsumerState<ReadPage>
                   const BorderRadius.vertical(top: Radius.circular(16)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
+                  color: Colors.black.withValues(alpha: 0.12),
                   blurRadius: 20,
                   offset: const Offset(0, -4),
                 ),
@@ -498,7 +498,7 @@ class _BibleButton extends StatelessWidget {
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
             const SizedBox(width: 2),
-            Icon(Icons.keyboard_arrow_down, size: 14, color: kMuted),
+            const Icon(Icons.keyboard_arrow_down, size: 14, color: kMuted),
           ],
         ),
       ),
@@ -553,7 +553,7 @@ class _BibleButton extends StatelessWidget {
                     trailing: isSelected
                         ? Icon(Icons.check, color: cs.primary, size: 16)
                         : !isDownloaded
-                            ? Icon(Icons.download_outlined,
+                            ? const Icon(Icons.download_outlined,
                                 size: 14, color: kMuted)
                             : null,
                     selected: isSelected,
@@ -692,12 +692,12 @@ class _BottomBar extends ConsumerWidget {
                   },
           ),
           const SizedBox(width: 4),
-          IconButton(
-            icon: const Icon(Icons.share_outlined, size: 16),
+          const IconButton(
+            icon: Icon(Icons.share_outlined, size: 16),
             onPressed: null,
             tooltip: 'Share',
-            padding: const EdgeInsets.all(8),
-            constraints: const BoxConstraints(),
+            padding: EdgeInsets.all(8),
+            constraints: BoxConstraints(),
           ),
         ],
       ),

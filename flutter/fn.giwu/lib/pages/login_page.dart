@@ -178,7 +178,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             color: active ? cs.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(7),
             boxShadow: active
-                ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4)]
+                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4)]
                 : null,
           ),
           child: Text(

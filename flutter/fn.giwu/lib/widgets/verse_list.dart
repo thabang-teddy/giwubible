@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/verse.dart';
 import '../providers/prefs_provider.dart';
-import '../theme.dart';
 
 class VerseList extends ConsumerWidget {
   const VerseList({
@@ -34,7 +33,7 @@ class VerseList extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               color: isActive
-                  ? cs.primary.withOpacity(isDark ? 0.15 : 0.07)
+                  ? cs.primary.withValues(alpha: isDark ? 0.15 : 0.07)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(4),
             ),

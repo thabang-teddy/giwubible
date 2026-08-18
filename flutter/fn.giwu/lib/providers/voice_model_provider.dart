@@ -62,8 +62,9 @@ class VoiceModelNotifier extends StateNotifier<VoiceInstallState> {
       final bytes = await api.downloadVoiceArchive(
         cancelToken: _cancelToken,
         onProgress: (progress) {
-          if (!mounted || state.status != VoiceInstallStatus.downloading)
+          if (!mounted || state.status != VoiceInstallStatus.downloading) {
             return;
+          }
           state = VoiceInstallState(
             status: VoiceInstallStatus.downloading,
             progress: progress,

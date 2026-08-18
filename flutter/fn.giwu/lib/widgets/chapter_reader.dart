@@ -163,9 +163,9 @@ class _VerseRow extends ConsumerWidget {
     // stays distinguishable from the tap-to-compare selection.
     final Color background;
     if (isSpeaking) {
-      background = cs.primary.withOpacity(isDark ? 0.26 : 0.14);
+      background = cs.primary.withValues(alpha: isDark ? 0.26 : 0.14);
     } else if (isSelected) {
-      background = cs.primary.withOpacity(isDark ? 0.15 : 0.07);
+      background = cs.primary.withValues(alpha: isDark ? 0.15 : 0.07);
     } else {
       background = Colors.transparent;
     }
@@ -230,7 +230,7 @@ class _ChapterError extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Failed to load chapter.', style: TextStyle(color: kMuted)),
+          const Text('Failed to load chapter.', style: TextStyle(color: kMuted)),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: onRetry,

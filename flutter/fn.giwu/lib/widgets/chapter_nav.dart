@@ -70,7 +70,7 @@ class ChapterNav extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 3),
-                        Icon(Icons.keyboard_arrow_down,
+                        const Icon(Icons.keyboard_arrow_down,
                             size: 15, color: kMuted),
                       ],
                     ),
@@ -129,7 +129,7 @@ class _PillButton extends StatelessWidget {
           child: Icon(
             icon,
             size: 16,
-            color: onPressed == null ? kMuted.withOpacity(0.4) : null,
+            color: onPressed == null ? kMuted.withValues(alpha: 0.4) : null,
           ),
         ),
       ),

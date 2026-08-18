@@ -9,7 +9,7 @@ Uint8List encodeWav(Float32List samples, int sampleRate) {
   const channels = 1;
   const bitsPerSample = 16;
   final byteRate = sampleRate * channels * bitsPerSample ~/ 8;
-  final blockAlign = channels * bitsPerSample ~/ 8;
+  const blockAlign = channels * bitsPerSample ~/ 8;
   final dataBytes = samples.length * 2;
 
   final out = ByteData(44 + dataBytes);

@@ -73,16 +73,16 @@ class BookmarksPage extends ConsumerWidget {
       body: bookmarksAsync.isLoading
           ? const Center(child: CircularProgressIndicator())
           : bookmarks.isEmpty
-              ? Center(
+              ? const Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.bookmark_border, size: 48, color: kMuted),
-                      const SizedBox(height: 16),
-                      const Text('No bookmarks yet',
+                      SizedBox(height: 16),
+                      Text('No bookmarks yet',
                           style: TextStyle(color: kMuted)),
-                      const SizedBox(height: 4),
-                      const Text(
+                      SizedBox(height: 4),
+                      Text(
                         'Long-press a verse while reading to bookmark it.',
                         style: TextStyle(fontSize: 13, color: kMuted),
                         textAlign: TextAlign.center,
@@ -142,7 +142,7 @@ class _BookmarkTile extends ConsumerWidget {
           const SizedBox(width: 8),
           Text(
             bookmark.bible.replaceFirst('t_', '').toUpperCase(),
-            style: TextStyle(fontSize: 10, color: kMuted, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 10, color: kMuted, fontWeight: FontWeight.w600),
           ),
         ],
       ),

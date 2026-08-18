@@ -50,7 +50,6 @@ class _AppPanelState extends ConsumerState<AppPanel>
   @override
   Widget build(BuildContext context) {
     final activeVerse = ref.watch(activeVerseProvider);
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? kDarkSurface : Colors.white;
 
@@ -112,7 +111,7 @@ class _AppPanelState extends ConsumerState<AppPanel>
               ),
               // Settings
               IconButton(
-                icon: Icon(Icons.settings_outlined, size: 16, color: kMuted),
+                icon: const Icon(Icons.settings_outlined, size: 16, color: kMuted),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const SettingsPage(),
@@ -126,7 +125,7 @@ class _AppPanelState extends ConsumerState<AppPanel>
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
                   child: IconButton(
-                    icon: Icon(Icons.close, size: 16, color: kMuted),
+                    icon: const Icon(Icons.close, size: 16, color: kMuted),
                     onPressed: widget.onClose,
                     tooltip: 'Close',
                     padding: const EdgeInsets.all(8),
@@ -178,9 +177,9 @@ class _ParallelVersesTab extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
 
     if (verse == null) {
-      return Center(
+      return const Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Text(
             'Click any verse to see parallel translations.',
             style: TextStyle(color: kMuted, fontSize: 13),
@@ -191,9 +190,9 @@ class _ParallelVersesTab extends ConsumerWidget {
     }
 
     if (bibles.isEmpty) {
-      return Center(
+      return const Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Text(
             'No other translations downloaded.\nDownload more from Settings → Manage translations.',
             style: TextStyle(color: kMuted, fontSize: 13),
@@ -289,7 +288,7 @@ class _VersionCard extends StatelessWidget {
           text != null
               ? Text(text!,
                   style: const TextStyle(fontSize: 13, height: 1.55))
-              : Text('• • •',
+              : const Text('• • •',
                   style: TextStyle(color: kMuted, fontSize: 14)),
         ],
       ),
@@ -341,8 +340,8 @@ class _ParallelBiblesTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8),
           child: Text(
             'Select bibles to compare',
             style: TextStyle(fontSize: 12, color: kMuted),
@@ -371,8 +370,8 @@ class _ParallelBiblesTab extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (!isDownloaded)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4),
+                  const Padding(
+                    padding: EdgeInsets.only(right: 4),
                     child: Icon(
                       Icons.download_outlined,
                       size: 13,

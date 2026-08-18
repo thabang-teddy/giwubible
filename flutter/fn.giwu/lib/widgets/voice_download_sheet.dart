@@ -58,11 +58,11 @@ class VoiceDownloadSheet extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               'Reading aloud runs entirely on your device. The voice is a '
               '$kVoiceDownloadSize one-time download — after that it works '
               'with no internet connection at all.',
-              style: const TextStyle(fontSize: 13, height: 1.5, color: kMuted),
+              style: TextStyle(fontSize: 13, height: 1.5, color: kMuted),
             ),
             const SizedBox(height: 20),
             if (install.isBusy)

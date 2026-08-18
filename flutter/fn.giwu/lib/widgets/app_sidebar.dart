@@ -61,7 +61,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
             padding: const EdgeInsets.fromLTRB(14, 14, 8, 6),
             child: Row(
               children: [
-                Text(
+                const Text(
                   'BIBLE BOOKS',
                   style: TextStyle(
                     fontSize: 10,
@@ -74,7 +74,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 if (widget.onClose != null)
                   GestureDetector(
                     onTap: widget.onClose,
-                    child: Icon(Icons.close, size: 16, color: kMuted),
+                    child: const Icon(Icons.close, size: 16, color: kMuted),
                   ),
               ],
             ),
@@ -86,8 +86,8 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
               controller: _controller,
               decoration: InputDecoration(
                 hintText: 'Search books...',
-                hintStyle: TextStyle(fontSize: 12, color: kMuted),
-                prefixIcon: Icon(Icons.search, size: 15, color: kMuted),
+                hintStyle: const TextStyle(fontSize: 12, color: kMuted),
+                prefixIcon: const Icon(Icons.search, size: 15, color: kMuted),
                 isDense: true,
                 filled: true,
                 fillColor: isDark ? kDarkBg : Colors.white,
@@ -123,9 +123,9 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.wifi_off_rounded, color: kMuted, size: 28),
+                      const Icon(Icons.wifi_off_rounded, color: kMuted, size: 28),
                       const SizedBox(height: 8),
-                      Text(
+                      const Text(
                         'Failed to load books',
                         style: TextStyle(fontSize: 12, color: kMuted),
                         textAlign: TextAlign.center,
@@ -134,7 +134,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                         const SizedBox(height: 4),
                         Text(
                           widget.errorMessage!,
-                          style: TextStyle(fontSize: 10, color: kMuted),
+                          style: const TextStyle(fontSize: 10, color: kMuted),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -151,7 +151,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
               ),
             )
           else if (widget.books.isEmpty)
-            Expanded(
+            const Expanded(
               child: Center(
                 child: Text(
                   'No books — check API',
@@ -205,7 +205,7 @@ class _BookItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: isActive ? cs.primary.withOpacity(0.08) : Colors.transparent,
+          color: isActive ? cs.primary.withValues(alpha: 0.08) : Colors.transparent,
           border: isActive
               ? Border(left: BorderSide(color: cs.primary, width: 2))
               : const Border(left: BorderSide(color: Colors.transparent, width: 2)),

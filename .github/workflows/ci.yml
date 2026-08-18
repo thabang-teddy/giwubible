@@ -1,0 +1,271 @@
+# Giwu Bible CI.
+#
+# Three checks and one shipper:
+#
+#   php      Pint, the PHPUnit suite, and a boot smoke that proves the release
+#            caches (config/route/view) actually build. Runs on the PHP version
+#            the SERVER runs, not the minimum composer.json allows — see the
+#            CPANEL_PHP_VERSION note below.
+#   js       The Vite build. If the bundle does not build, the artefact would
+#            ship a stale one, because public/build is committed in source.
+#   flutter  `flutter analyze` and `flutter test` for the Android app.
+#   cpanel   Builds the deploy artefact and publishes it for the account to
+#            pull. staging -> staging host, master -> production host.
+#
+# Nothing here uses continue-on-error. A check that cannot fail the build is
+# not a check.
+
+name: CI
+
+# Two long-lived branches, because both deploy. The repository's default branch
+# is `master`; if you ever rename it to `main`, this list and the mapping in the
+# cpanel job are the two places to change.
+on:
+  push:
+    branches: [master, staging]
+  pull_request:
+    branches: [master, staging]
+
+permissions:
+  contents: read
+
+env:
+  # The version the cPanel account actually runs (8.4.22), NOT composer.json's
+  # `^8.1` floor. Laravel 10.48 predates full 8.4 support, so testing on 8.1
+  # here would prove the code works on a version nothing serves. This value and
+  # MIN_PHP_ID in deploy/cpanel-deploy.sh are the contract between the machine
+  # that builds the artefact and the machine that runs it — change one, change
+  # the other.
+  CPANEL_PHP_VERSION: '8.4'
+  NODE_VERSION: '20'
+
+jobs:
+  php:
+    name: PHP — lint, test, and the release caches
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.CPANEL_PHP_VERSION }}
+          extensions: mbstring, pdo_sqlite, sqlite3, zip, bcmath, intl
+          coverage: none
+
+      - name: Install dependencies
+        working-directory: laravel
+        run: composer install --no-interaction --no-progress --no-ansi
+
+      - name: Prepare the environment
+        working-directory: laravel
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Pint
+        working-directory: laravel
+        run: ./vendor/bin/pint --test
+
+      # phpunit.xml pins DB_DATABASE to :memory:, so this never touches a file.
+      - name: Test
+        working-directory: laravel
+        run: php artisan test
+
+      # The release path, rehearsed. deploy/cpanel-deploy.sh caches config,
+      # routes and views on the server; a closure in a route file or a config
+      # value that cannot be serialised fails there, in maintenance mode, at
+      # 2am. Failing here instead costs ten seconds.
+      #
+      # `route:list` after `config:cache` is the part that matters: it proves
+      # the application still boots when Laravel is no longer reading .env.
+      - name: Smoke the release caches
+        working-directory: laravel
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan route:list > /dev/null
+          php artisan optimize:clear
+
+      - name: Audit dependencies
+        working-directory: laravel
+        run: composer audit --no-interaction
+
+  js:
+    name: JS — build the bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: laravel/package-lock.json
+
+      - name: Install
+        working-directory: laravel
+        run: npm ci
+
+      # There is no lint step on purpose: package.json declares an `eslint`
+      # script but eslint is not a dependency and there is no config, so the
+      # script cannot run. Add both, then add the step — do not add a step that
+      # passes because the tool is missing.
+      - name: Build
+        working-directory: laravel
+        run: npm run build
+
+  flutter:
+    name: Flutter — analyze and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install
+        working-directory: flutter/fn.giwu
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: flutter/fn.giwu
+        run: flutter analyze
+
+      - name: Test
+        working-directory: flutter/fn.giwu
+        run: flutter test
+
+  # ---------------------------------------------------------------------------
+  # The artefact.
+  #
+  #   staging -> deploy/staging    -> ~/staging/giwubible    -> staging.giwu.co.za
+  #   master  -> deploy/production -> ~/production/giwubible -> giwu.co.za
+  #
+  # The deploy branches are ARTEFACTS, not history. They carry vendor/ (ignored
+  # in source) and a freshly built public/build, because the cPanel account
+  # deploys by git pull and has no Node. They are force-pushed on every build.
+  # Never branch off one.
+  #
+  # No cPanel credential appears anywhere in this job, by design: the account
+  # polls for its own branch and derives its own paths, so CI never learns where
+  # the application lives. deploy/cpanel-poll.sh explains why that direction.
+  # ---------------------------------------------------------------------------
+  cpanel:
+    name: cPanel — build and publish the artefact
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # THE GATE. Without this edge, this is a deployment pipeline with no tests
+    # in front of it.
+    #
+    # `flutter` is deliberately NOT a dependency: the Android app ships through
+    # the Play Store, not through this deploy, and blocking a web hotfix on a
+    # Dart analyzer warning would buy nothing. It is still a required check on
+    # the branch — it just does not gate the web release.
+    needs: [php, js]
+
+    # The `github.event_name == 'push'` clause is not decoration: without it a
+    # pull request targeting master would publish the PR head as production.
+    # That is the most expensive mistake available in this file.
+    if: |
+      github.event_name == 'push'
+      && contains(fromJSON('["master", "staging"]'), github.ref_name)
+
+    # Keyed on the branch: two pushes a minute apart must not have their pulls
+    # interleave on the server, but a staging deploy must never block a
+    # production one. Not cancelled in flight — a half-applied deploy is worse
+    # than a slow one.
+    concurrency:
+      group: cpanel-${{ github.ref_name }}
+      cancel-in-progress: false
+
+    # Overrides the workflow-level `contents: read`. Force-pushing the artefact
+    # branch is the only write this pipeline performs.
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve the target environment
+        run: |
+          if [ "${{ github.ref_name }}" = "master" ]; then
+            echo "DEPLOY_BRANCH=deploy/production" >> "$GITHUB_ENV"
+            echo "ENVIRONMENT=production"          >> "$GITHUB_ENV"
+          else
+            echo "DEPLOY_BRANCH=deploy/staging"    >> "$GITHUB_ENV"
+            echo "ENVIRONMENT=staging"             >> "$GITHUB_ENV"
+          fi
+          echo "RELEASE_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.CPANEL_PHP_VERSION }}
+          extensions: mbstring, pdo_sqlite, sqlite3, zip, bcmath, intl
+          coverage: none
+
+      # --no-dev is what makes this an artefact rather than a checkout. It also
+      # means the artefact cannot run the test suite, which is correct: tests
+      # ran in the jobs this one depends on.
+      - name: Install PHP dependencies for release
+        working-directory: laravel
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-ansi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: laravel/package-lock.json
+
+      # Rebuilt rather than trusted. public/build is committed in source, so an
+      # artefact that reused it would ship whatever was last built on someone's
+      # laptop.
+      - name: Build the front-end bundle
+        working-directory: laravel
+        run: |
+          npm ci
+          npm run build
+
+      # Prune what the server has no use for, then force-add what the source
+      # gitignore excludes. `git add -Af` is required for vendor/ precisely
+      # BECAUSE it is ignored in source.
+      #
+      # flutter/ is 100+ MB of Android tooling the web host never executes.
+      # documents/ and tests/ likewise. bible-sqlite.db (42 MB) STAYS: it is the
+      # application's read-only source data, and the server has no other copy.
+      - name: Publish the artefact branch
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          rm -rf flutter documents laravel/tests laravel/node_modules
+          git checkout -B "$DEPLOY_BRANCH"
+          git add -Af laravel/vendor laravel/public/build
+          git add -A
+          git commit -m "build ${RELEASE_SHA} for ${ENVIRONMENT} from ${{ github.sha }}"
+          git push --force origin "$DEPLOY_BRANCH"
+
+      - name: Summarise
+        run: |
+          {
+            echo "### Artefact published for ${ENVIRONMENT}"
+            echo
+            echo "- Source: \`${{ github.ref_name }}\` @ \`${RELEASE_SHA}\`"
+            echo "- Artefact branch: \`${DEPLOY_BRANCH}\`"
+            echo
+            echo "**Not deployed yet.** The cPanel account polls this branch every five"
+            echo "minutes and applies it. A green tick here means the artefact is ready,"
+            echo "not that it is live — the account's deploy log is the record of that."
+          } >> "$GITHUB_STEP_SUMMARY"

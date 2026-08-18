@@ -110,25 +110,42 @@ Most of this is already answered, because fiyobra measured the same account on
 | Cron jobs | **7 maximum** | **The binding constraint.** See §5 |
 | Databases | 2 maximum | Irrelevant — this app is SQLite |
 
-### 2.1 The one thing that is NOT answered: PHP 8.4
+### 2.1 PHP 8.4 — answered, by upgrading the framework
 
-`composer.json` requires `^8.1` and the framework is **Laravel 10.48**, which
-predates full PHP 8.4 support. The account serves **8.4.22**, and PHP Selector
-has already moved once here, so pinning 8.3 is not a durable answer.
+**Resolved on 2026-08-18.** This section originally read: `composer.json`
+requires `^8.1` and the framework is **Laravel 10.48**, which predates full PHP
+8.4 support — a go/no-go gate.
 
-**This is a go/no-go gate, and it is the first thing to do.** Run the suite on
-8.4 locally, or let the new `php` CI job do it:
+The gate is gone, because the framework is no longer Laravel 10. `composer
+audit` (a blocking CI step) reported three advisories against laravel/framework
+10.50.2, including a CRLF injection in the default `email` validation rule that
+registration uses. There is **no patched Laravel 10** — the fixes ship in
+12.60.0+ — and Laravel 10's security support had already lapsed. So the
+framework was upgraded to **Laravel 12.67** rather than the advisories being
+suppressed. `composer.json` now requires `^8.2`, and `MIN_PHP_ID` in
+`deploy/cpanel-deploy.sh` was raised to `80200` to match.
+
+The legacy application skeleton was kept — `app/Http/Kernel.php`,
+`RouteServiceProvider`, the full `config/` directory — because Laravel 11 and 12
+still support it. That is what made this a dependency upgrade rather than a
+rewrite: **zero application files changed.** Adopting the slim Laravel 11
+skeleton is optional, separate, and owed nothing.
+
+The API contract was verified rather than assumed: every public `/api` response,
+both error envelopes, and the token-authenticated routes were captured on
+Laravel 10 / Sanctum 3 and on Laravel 12 / Sanctum 4 and compared. **Byte
+identical**, including the `{"\"t\"":"t"}` quoted-identifier artefact in
+`/api/books` that the Flutter app has always received.
+
+The suite still runs on 8.4 in CI permanently:
 
 ```bash
 cd laravel && php artisan test
 ```
 
-- **Green** — proceed. CI now runs on 8.4 permanently, so a regression is caught
-  by the pipeline rather than by production.
-- **Deprecation noise only** (implicit nullable parameters are the usual one) —
-  proceed, and fix them as they surface. Warnings, not failures.
-- **Failures** — stop and upgrade the framework first. Deploying an application
-  to a PHP version it fails on is not a deployment, it is a scheduled outage.
+13 tests, 75 assertions, green on 8.4 against Laravel 12 — and green from a
+clean clone, not just a working copy. A regression is now caught by the pipeline
+rather than by production.
 
 ---
 
@@ -435,7 +452,7 @@ data is in `~/shared/`, so no rollback can touch it.
 | Up to 5 minutes of deploy latency | The price of the account pulling instead of GitHub holding a key to it | Never, on this hosting |
 | SQLite, single writer | The read path is the whole product and it is read-only; writes are logins and bookmarks | Concurrent writes start timing out — then it is MySQL, and the account has a database slot free |
 | Shared account with fiyobra | One quota, one PHP version, one mail reputation, one cron budget | Either application's traffic threatens the other |
-| Laravel 10 on PHP 8.4 | Verified by the §2.1 gate, and CI now runs on 8.4 permanently | Laravel 10's security support has already lapsed — this upgrade is owed |
+| ~~Laravel 10 on PHP 8.4~~ **Resolved** | Upgraded to Laravel 12.67 on 2026-08-18 — see §2.1. The owed upgrade was paid rather than deferred, because `composer audit` had no other honest outcome | Laravel 12's own support window lapses. Laravel 13 exists today |
 | No `TrustProxies` middleware | Correct on plain cPanel Apache | You put Cloudflare in front with flexible SSL — then URL generation emits `http://` and you get mixed content |
 | Android app not in this pipeline | It ships through the Play Store; CI checks it but does not gate the web release on it | The app and the API need to release together |
 

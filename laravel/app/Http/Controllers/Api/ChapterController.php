@@ -12,13 +12,13 @@ class ChapterController extends Controller
     public function index(Request $request, BibleRepository $bibles): JsonResponse
     {
         $request->validate([
-            'bible'   => 'required|string',
-            'book'    => 'required|integer|min:1',
+            'bible' => 'required|string',
+            'book' => 'required|integer|min:1',
             'chapter' => 'required|integer|min:1',
         ]);
 
         $table = $bibles->resolveTable($request->input('bible'));
-        if (!$table) {
+        if (! $table) {
             return response()->json(['error' => 'Unknown bible version', 'code' => 'INVALID_BIBLE'], 422);
         }
 

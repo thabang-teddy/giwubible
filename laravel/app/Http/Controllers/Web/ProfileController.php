@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
@@ -20,12 +21,12 @@ class ProfileController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
 
         $data = $request->validate([
-            'name'     => ['sometimes', 'required', 'string', 'max:255'],
-            'email'    => ['sometimes', 'required', 'email', 'unique:users,email,' . $user->id],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'email', 'unique:users,email,'.$user->id],
             'password' => ['sometimes', 'required', 'confirmed', Password::min(8)],
         ]);
 

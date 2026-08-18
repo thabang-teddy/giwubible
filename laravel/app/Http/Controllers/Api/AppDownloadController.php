@@ -26,7 +26,7 @@ class AppDownloadController extends Controller
         abort_unless(file_exists($path), 404);
 
         return response()->download($path, $filename, [
-            'Content-Type'        => 'application/octet-stream',
+            'Content-Type' => 'application/octet-stream',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }

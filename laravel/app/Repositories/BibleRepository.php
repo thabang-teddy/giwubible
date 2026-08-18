@@ -74,7 +74,7 @@ class BibleRepository
      * The same verse across every translation that has it — one payload, so the
      * comparison panel can load all parallel versions in a single request.
      *
-     * @return \Illuminate\Support\Collection<int, array{bible:string,abbreviation:string,version:string,text:string}>
+     * @return Collection<int, array{bible:string,abbreviation:string,version:string,text:string}>
      */
     public function comparisons(int $book, int $chapter, int $verse): Collection
     {

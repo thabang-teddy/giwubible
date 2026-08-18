@@ -18,7 +18,7 @@ class BibleDownloadController extends Controller
         if (! $version) {
             return response()->json([
                 'error' => 'Unknown bible version',
-                'code'  => 'INVALID_BIBLE',
+                'code' => 'INVALID_BIBLE',
             ], 422);
         }
 
@@ -42,10 +42,10 @@ class BibleDownloadController extends Controller
 
         return response()->json([
             'data' => [
-                'table'        => (string) $version->getAttribute('table'),
+                'table' => (string) $version->getAttribute('table'),
                 'abbreviation' => (string) $version->abbreviation,
-                'version'      => (string) $version->version,
-                'verses'       => $verses,
+                'version' => (string) $version->version,
+                'verses' => $verses,
             ],
         ]);
     }

@@ -1,8 +1,9 @@
 <?php
 
+use App\Exceptions\Handler;
+use App\Http\Kernel;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
 
 $app = new Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
@@ -10,7 +11,7 @@ $app = new Application(
 
 $app->singleton(
     Illuminate\Contracts\Http\Kernel::class,
-    App\Http\Kernel::class
+    Kernel::class
 );
 
 $app->singleton(
@@ -19,8 +20,8 @@ $app->singleton(
 );
 
 $app->singleton(
-    Illuminate\Contracts\Debug\ExceptionHandler::class,
-    App\Exceptions\Handler::class
+    ExceptionHandler::class,
+    Handler::class
 );
 
 return $app;

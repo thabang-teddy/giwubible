@@ -12,14 +12,14 @@ class VerseController extends Controller
     public function show(Request $request, BibleRepository $bibles): JsonResponse
     {
         $request->validate([
-            'bible'   => 'required|string',
-            'book'    => 'required|integer|min:1',
+            'bible' => 'required|string',
+            'book' => 'required|integer|min:1',
             'chapter' => 'required|integer|min:1',
-            'verse'   => 'required|integer|min:1',
+            'verse' => 'required|integer|min:1',
         ]);
 
         $version = $bibles->resolveVersion($request->input('bible'));
-        if (!$version) {
+        if (! $version) {
             return response()->json(['error' => 'Unknown bible version', 'code' => 'INVALID_BIBLE'], 422);
         }
 
@@ -30,16 +30,16 @@ class VerseController extends Controller
             (int) $request->input('verse'),
         );
 
-        if (!$row) {
+        if (! $row) {
             return response()->json(['error' => 'Verse not found', 'code' => 'NOT_FOUND'], 404);
         }
 
         return response()->json([
             'data' => [
-                'bible'        => $version->table,
+                'bible' => $version->table,
                 'abbreviation' => $version->abbreviation,
-                'version'      => $version->version,
-                'text'         => $row->t,
+                'version' => $version->version,
+                'text' => $row->t,
             ],
         ]);
     }
@@ -51,9 +51,9 @@ class VerseController extends Controller
     public function comparisons(Request $request, BibleRepository $bibles): JsonResponse
     {
         $request->validate([
-            'book'    => 'required|integer|min:1',
+            'book' => 'required|integer|min:1',
             'chapter' => 'required|integer|min:1',
-            'verse'   => 'required|integer|min:1',
+            'verse' => 'required|integer|min:1',
         ]);
 
         $data = $bibles->comparisons(

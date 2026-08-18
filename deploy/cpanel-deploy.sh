@@ -39,7 +39,7 @@ APP="${REPO_ROOT}/laravel"
 # one, change the other — that pairing is the whole contract between the
 # machine that builds and the machine that runs.
 PHP="${GIWU_PHP:-/usr/local/bin/php}"
-MIN_PHP_ID=80200
+MIN_PHP_ID=80300
 
 log() { printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }
 

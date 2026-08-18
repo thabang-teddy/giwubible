@@ -121,21 +121,36 @@ audit` (a blocking CI step) reported three advisories against laravel/framework
 10.50.2, including a CRLF injection in the default `email` validation rule that
 registration uses. There is **no patched Laravel 10** — the fixes ship in
 12.60.0+ — and Laravel 10's security support had already lapsed. So the
-framework was upgraded to **Laravel 12.67** rather than the advisories being
-suppressed. `composer.json` now requires `^8.2`, and `MIN_PHP_ID` in
-`deploy/cpanel-deploy.sh` was raised to `80200` to match.
+framework was upgraded rather than the advisories being suppressed: first to
+12.67, then to **Laravel 13.26**, the current major. `composer.json` now
+requires `^8.3` (Laravel 13's floor), and `MIN_PHP_ID` in
+`deploy/cpanel-deploy.sh` was raised to `80300` to match. The account serves
+8.4.22, clear of it.
 
 The legacy application skeleton was kept — `app/Http/Kernel.php`,
-`RouteServiceProvider`, the full `config/` directory — because Laravel 11 and 12
-still support it. That is what made this a dependency upgrade rather than a
-rewrite: **zero application files changed.** Adopting the slim Laravel 11
-skeleton is optional, separate, and owed nothing.
+`RouteServiceProvider`, the full `config/` directory — because Laravel 11, 12
+and 13 all still support it. That is what kept a two-major jump to a dependency
+upgrade rather than a rewrite. Adopting the slim skeleton is optional, separate,
+and owed nothing.
+
+**One behaviour change needed application code, and it is worth knowing about.**
+Laravel 13 removed the implicit `?? route('login')` fallback in Foundation's
+exception handler. With no redirect callback registered, a non-JSON request to a
+route behind `auth` no longer redirects — it returns a **bodyless 401**. On this
+app that is `/bookmarks` and `/profile`: a logged-out visitor would have got a
+blank page instead of the login form. `AppServiceProvider::boot()` now registers
+`Authenticate::redirectUsing(fn () => route('login'))`, restoring the old
+behaviour exactly. JSON requests never reach that branch, so the API is
+untouched — verified below.
 
 The API contract was verified rather than assumed: every public `/api` response,
 both error envelopes, and the token-authenticated routes were captured on
-Laravel 10 / Sanctum 3 and on Laravel 12 / Sanctum 4 and compared. **Byte
+Laravel 10 / Sanctum 3 and again on Laravel 13 / Sanctum 4 and compared. **Byte
 identical**, including the `{"\"t\"":"t"}` quoted-identifier artefact in
-`/api/books` that the Flutter app has always received.
+`/api/books` that the Flutter app has always received. The unauthenticated
+edges were compared across 10, 12 and 13 too, with and without an `Accept:
+application/json` header — identical in every combination. Route count is 28 on
+10 and on 13.
 
 The suite still runs on 8.4 in CI permanently:
 
@@ -143,7 +158,7 @@ The suite still runs on 8.4 in CI permanently:
 cd laravel && php artisan test
 ```
 
-13 tests, 75 assertions, green on 8.4 against Laravel 12 — and green from a
+13 tests, 75 assertions, green on 8.4 against Laravel 13 — and green from a
 clean clone, not just a working copy. A regression is now caught by the pipeline
 rather than by production.
 
@@ -452,7 +467,7 @@ data is in `~/shared/`, so no rollback can touch it.
 | Up to 5 minutes of deploy latency | The price of the account pulling instead of GitHub holding a key to it | Never, on this hosting |
 | SQLite, single writer | The read path is the whole product and it is read-only; writes are logins and bookmarks | Concurrent writes start timing out — then it is MySQL, and the account has a database slot free |
 | Shared account with fiyobra | One quota, one PHP version, one mail reputation, one cron budget | Either application's traffic threatens the other |
-| ~~Laravel 10 on PHP 8.4~~ **Resolved** | Upgraded to Laravel 12.67 on 2026-08-18 — see §2.1. The owed upgrade was paid rather than deferred, because `composer audit` had no other honest outcome | Laravel 12's own support window lapses. Laravel 13 exists today |
+| ~~Laravel 10 on PHP 8.4~~ **Resolved** | Upgraded to Laravel 13.26 on 2026-08-18 — see §2.1. The owed upgrade was paid rather than deferred, because `composer audit` had no other honest outcome, and taken to the current major rather than stopping at 12 | Laravel 13's support window lapses — but this is now the newest major, not two behind |
 | No `TrustProxies` middleware | Correct on plain cPanel Apache | You put Cloudflare in front with flexible SSL — then URL generation emits `http://` and you get mixed content |
 | Android app not in this pipeline | It ships through the Play Store; CI checks it but does not gate the web release on it | The app and the API need to release together |
 

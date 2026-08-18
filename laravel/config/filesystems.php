@@ -33,7 +33,14 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // false, not true. Laravel 11+ turns `serve` into two real public
+            // routes on this disk — GET /storage/{path} and, less obviously,
+            // PUT /storage/{path}, which writes. Both are signature-gated, so
+            // this is surface rather than a hole. But nothing in this app uses
+            // the Storage facade at all: downloads are served from
+            // public_path() by AppDownloadController. Unused surface on a
+            // public host is worth deleting, not guarding.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

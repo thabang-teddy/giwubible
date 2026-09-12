@@ -54,12 +54,10 @@ return [
         'driver' => 'file',
     ],
 
-    // Env-driven maintenance gate for web routes only — see
-    // App\Http\Middleware\CheckEnvMaintenanceMode. Independent of the
-    // 'maintenance' driver above, which backs `php artisan down`.
-    'maintenance_mode' => (bool) env('MAINTENANCE_MODE', false),
-
-    'maintenance_message' => env('MAINTENANCE_MESSAGE'),
+    // MAINTENANCE_MODE / MAINTENANCE_MESSAGE are deliberately NOT config()
+    // keys — production runs `artisan config:cache` on every deploy, which
+    // would freeze them. App\Http\Middleware\CheckEnvMaintenanceMode reads
+    // .env's raw bytes instead, so the toggle stays live between deploys.
 
     /*
     |--------------------------------------------------------------------------

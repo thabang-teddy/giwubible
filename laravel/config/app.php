@@ -54,6 +54,13 @@ return [
         'driver' => 'file',
     ],
 
+    // Env-driven maintenance gate for web routes only — see
+    // App\Http\Middleware\CheckEnvMaintenanceMode. Independent of the
+    // 'maintenance' driver above, which backs `php artisan down`.
+    'maintenance_mode' => (bool) env('MAINTENANCE_MODE', false),
+
+    'maintenance_message' => env('MAINTENANCE_MESSAGE'),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers

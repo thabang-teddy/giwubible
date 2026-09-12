@@ -2,6 +2,7 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\CheckEnvMaintenanceMode;
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectIfAuthenticated;
@@ -45,6 +46,7 @@ class Kernel extends HttpKernel
      */
     protected $middlewareGroups = [
         'web' => [
+            CheckEnvMaintenanceMode::class,
             EncryptCookies::class,
             AddQueuedCookiesToResponse::class,
             StartSession::class,

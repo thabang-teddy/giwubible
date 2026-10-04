@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'github' => [
+        // Releases (APK/EXE) the download page links to.
+        'repo' => env('GITHUB_REPO', 'thabang-teddy/giwubible'),
+    ],
+
 ];

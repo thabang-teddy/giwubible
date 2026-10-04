@@ -1,0 +1,2 @@
+# Hook scripts run under bash; a CRLF checkout breaks them (stray carriage returns).
+.githooks/* text eol=lf

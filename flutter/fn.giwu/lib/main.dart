@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'api/client.dart';
 import 'api/download.dart';
@@ -15,6 +18,13 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // sqflite has no Windows/Linux plugin; route its global openDatabase()
+  // through the FFI implementation, which bundles sqlite3.dll on Windows.
+  if (Platform.isWindows || Platform.isLinux) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
 
   final prefs = await SharedPreferences.getInstance();
   final bibleDb = await BibleDatabase.open();

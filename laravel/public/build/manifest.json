@@ -1,0 +1,93 @@
+{
+  "_useAuth-Dcm5fNz3.js": {
+    "file": "assets/useAuth-Dcm5fNz3.js",
+    "name": "useAuth",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_useBookmarks-CmHe7TS7.js": {
+    "file": "assets/useBookmarks-CmHe7TS7.js",
+    "name": "useBookmarks",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/Pages/Bookmarks.jsx": {
+    "file": "assets/Bookmarks-Dvr80pZ2.js",
+    "name": "Bookmarks",
+    "src": "resources/js/Pages/Bookmarks.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useAuth-Dcm5fNz3.js",
+      "_useBookmarks-CmHe7TS7.js"
+    ]
+  },
+  "resources/js/Pages/Download.jsx": {
+    "file": "assets/Download-CqfeF_7K.js",
+    "name": "Download",
+    "src": "resources/js/Pages/Download.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/Pages/Home.jsx": {
+    "file": "assets/Home-dqxnE5aD.js",
+    "name": "Home",
+    "src": "resources/js/Pages/Home.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useAuth-Dcm5fNz3.js"
+    ]
+  },
+  "resources/js/Pages/Login.jsx": {
+    "file": "assets/Login-DRBeZLL1.js",
+    "name": "Login",
+    "src": "resources/js/Pages/Login.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/Pages/Profile.jsx": {
+    "file": "assets/Profile-9MSAld4j.js",
+    "name": "Profile",
+    "src": "resources/js/Pages/Profile.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useAuth-Dcm5fNz3.js"
+    ]
+  },
+  "resources/js/Pages/Read.jsx": {
+    "file": "assets/Read-czOzeuoe.js",
+    "name": "Read",
+    "src": "resources/js/Pages/Read.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useAuth-Dcm5fNz3.js",
+      "_useBookmarks-CmHe7TS7.js"
+    ]
+  },
+  "resources/js/app.jsx": {
+    "file": "assets/app-CeCiHSF4.js",
+    "name": "app",
+    "src": "resources/js/app.jsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/Pages/Bookmarks.jsx",
+      "resources/js/Pages/Download.jsx",
+      "resources/js/Pages/Home.jsx",
+      "resources/js/Pages/Login.jsx",
+      "resources/js/Pages/Profile.jsx",
+      "resources/js/Pages/Read.jsx"
+    ],
+    "css": [
+      "assets/app-CxwxHehe.css"
+    ]
+  }
+}

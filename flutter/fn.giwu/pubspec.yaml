@@ -19,6 +19,7 @@ dependencies:
   sherpa_onnx: ^1.13.4
   audioplayers: ^6.8.1
   archive: ^4.0.9
+  sqflite_common_ffi: ^2.4.3
 
 dev_dependencies:
   flutter_test:
@@ -31,6 +32,10 @@ flutter_launcher_icons:
   android: true
   ios: false
   min_sdk_android: 21
+  windows:
+    generate: true
+    image_path: "assets/icon.png"
+    icon_size: 256
   adaptive_icon_background: "#1a1a1a"
   adaptive_icon_foreground: "assets/icon.png"
 

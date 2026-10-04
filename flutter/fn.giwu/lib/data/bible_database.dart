@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:path/path.dart';
@@ -20,7 +21,11 @@ class BibleDatabase {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   static Future<BibleDatabase> open() async {
-    final dir = await getApplicationDocumentsDirectory();
+    // On desktop the documents directory is the user's visible Documents
+    // folder; keep the database in app support (AppData) there instead.
+    final dir = Platform.isAndroid
+        ? await getApplicationDocumentsDirectory()
+        : await getApplicationSupportDirectory();
     final dbPath = join(dir.path, 'giwu_bible.db');
 
     final db = await openDatabase(

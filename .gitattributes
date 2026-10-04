@@ -1,0 +1,2 @@
+# Hook scripts run under bash; a CRLF checkout breaks them ("": command not found).
+.githooks/* text eol=lf

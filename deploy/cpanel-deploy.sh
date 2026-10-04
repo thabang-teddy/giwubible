@@ -67,7 +67,7 @@ log "Deploying ${sha} into ${APP} using PHP ${php_version} (${PHP})"
 # migrations run, turns "silently migrated a throwaway copy and lost every
 # user" into a refusal.
 # ---------------------------------------------------------------------------
-db_path="$(grep -E '^DB_DATABASE=' "${APP}/.env" | tail -1 | cut -d= -f2- | tr -d '"'"'"'')"
+db_path="$(grep -E '^DB_DATABASE=' "${APP}/.env" | tail -1 | cut -d= -f2- | tr -d '"'"'"'\r')"
 
 case "$db_path" in
     /*) : ;;

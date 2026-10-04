@@ -1011,6 +1011,96 @@ body {
   margin: 0;
 }
 
+/* ── Layout: download cards | release sidebar ─────── */
+.download-layout {
+  width: 100%;
+  max-width: 960px;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.download-layout .download-cards { max-width: none; padding: 0; }
+
+/* ── Release sidebar (notes + GitHub links) ───────── */
+.release-panel {
+  position: sticky;
+  top: 24px;
+  padding: 20px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 14px;
+}
+
+.release-panel-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  margin: 0 0 6px;
+}
+
+.release-panel-title { font-size: 1rem; font-weight: 700; margin: 0; overflow-wrap: anywhere; }
+.release-panel-date { font-size: 12px; color: var(--gray-500); margin: 4px 0 12px; }
+
+.release-badge {
+  margin-left: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  background: var(--gray-200);
+  color: var(--gray-600);
+  vertical-align: middle;
+}
+
+.release-notes { max-height: 280px; overflow-y: auto; font-size: 13px; line-height: 1.55; color: var(--gray-600); }
+.release-notes h3 { font-size: 12px; font-weight: 700; margin: 12px 0 4px; color: var(--gray-700); }
+.release-notes h3:first-child { margin-top: 0; }
+.release-notes p { margin: 0 0 4px; overflow-wrap: anywhere; }
+.release-notes-item { padding-left: 14px; position: relative; }
+.release-notes-item::before { content: "\2022"; position: absolute; left: 2px; }
+.release-notes a, .release-notes-empty a { color: var(--primary); }
+.release-notes-empty { font-size: 13px; color: var(--gray-500); margin: 0; }
+
+.release-notes-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+.release-notes-link:hover { text-decoration: underline; }
+
+.release-github {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.release-github-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.release-github-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.release-github-actions .download-btn { flex: 1; justify-content: center; text-decoration: none; }
+
+.download-btn--unavailable { opacity: 0.6; cursor: default; }
+
+@media (max-width: 760px) {
+  .download-layout { grid-template-columns: minmax(0, 1fr); padding: 0 16px; gap: 16px; }
+  .release-panel { position: static; }
+}
+
 /* ── Download cards ───────────────────────────────── */
 .download-cards {
   display: flex;

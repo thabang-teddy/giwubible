@@ -271,3 +271,144 @@ jobs:
             echo "minutes and applies it. A green tick here means the artefact is ready,"
             echo "not that it is live — the account's deploy log is the record of that."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # The Windows installer, built for the release job below to attach.
+  #
+  # Same trigger and gate as `release`. Flutter cannot cross-compile Windows,
+  # so this runs on a Windows runner and hands the installer over as a
+  # workflow artifact. The installer script is
+  # flutter/fn.giwu/windows/installer/giwu_bible.iss.
+  # ---------------------------------------------------------------------------
+  windows:
+    name: Build the Windows installer
+    runs-on: windows-latest
+    timeout-minutes: 30
+    needs: [php, js, flutter, cpanel]
+
+    if: github.event_name == 'push' && github.ref_name == 'staging'
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: flutter/fn.giwu
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # Must produce the same TAG as the release job.
+      - name: Resolve the version
+        run: |
+          VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([0-9.]+).*/\1/')
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "TAG=v${VERSION}-staging.${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Build the app
+        run: |
+          flutter pub get
+          flutter build windows --release --build-number=${{ github.run_number }}
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          & $iscc /Q "/DAppVersion=$env:VERSION" "/DOutputName=giwubible-$env:TAG-windows-setup" windows\installer\giwu_bible.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: flutter/fn.giwu/build/installer/*.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # The tag, and the builds people can download.
+  #
+  # Runs only after a push to `staging` (i.e. a merge into it) where EVERY job
+  # above succeeded — including `flutter`, which does not gate the web deploy
+  # but must be green before we hand out an app. A failed check means no tag,
+  # no release.
+  #
+  # Tag:     v<pubspec version>-staging.<run number>   e.g. v1.0.0-staging.42
+  # Release: a GitHub pre-release with the Android APK and the Windows
+  #          installer attached, so both are downloadable from the
+  #          repository's Releases page (and the site's /download page).
+  #
+  # NOTE: the release build is still signed with the DEBUG key (see
+  # android/app/build.gradle.kts). Fine for sideloading staging builds; set up a
+  # real upload keystore before publishing anywhere else. The Windows installer
+  # is unsigned, so SmartScreen will warn on first run.
+  # ---------------------------------------------------------------------------
+  release:
+    name: Tag and publish the Android APK and Windows installer
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [php, js, flutter, cpanel, windows]
+
+    if: github.event_name == 'push' && github.ref_name == 'staging'
+
+    concurrency:
+      group: release-staging
+      cancel-in-progress: false
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve the version
+        working-directory: flutter/fn.giwu
+        run: |
+          VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([0-9.]+).*/\1/')
+          echo "TAG=v${VERSION}-staging.${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Build the APK
+        working-directory: flutter/fn.giwu
+        run: |
+          flutter pub get
+          flutter build apk --release --build-number=${{ github.run_number }}
+          cp build/app/outputs/flutter-apk/app-release.apk "giwubible-${TAG}.apk"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: flutter/fn.giwu
+
+      - name: Tag and publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" \
+            "flutter/fn.giwu/giwubible-${TAG}.apk" \
+            "flutter/fn.giwu/giwubible-${TAG}-windows-setup.exe" \
+            --target "${{ github.sha }}" \
+            --prerelease \
+            --title "Staging ${TAG}" \
+            --generate-notes
+
+      - name: Summarise
+        run: |
+          {
+            echo "### Released ${TAG}"
+            echo
+            echo "- Tag: \`${TAG}\` @ \`${{ github.sha }}\`"
+            echo "- Download: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${TAG}"
+          } >> "$GITHUB_STEP_SUMMARY"

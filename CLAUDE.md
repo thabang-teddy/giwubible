@@ -9,7 +9,7 @@ Multi-version Bible reader. Users read a primary chapter (KJV by default) and cl
 | Layer              | Technology                                                                     |
 |--------------------|--------------------------------------------------------------------------------|
 | Web Frontend       | React 19 via **Inertia.js**, served from Laravel (`laravel/resources/js`), Bootstrap 5 |
-| Mobile App         | Flutter (Android only)                                                         |
+| Mobile App         | Flutter (Android + Windows desktop)                                            |
 | Backend            | Laravel 10 — Inertia (web) **and** a JSON REST API (`/api`, for Flutter)       |
 | Database           | SQLite (`bible-sqlite.db`, read-only) + `database.sqlite` (users/bookmarks)    |
 | Auth               | Sanctum: session/cookie for web (Inertia), personal-access tokens for `/api` (Flutter) |
@@ -132,7 +132,7 @@ flutter build apk --split-per-abi   # Smaller per-ABI release APKs
 
 | Decision                          | Value                                                                 |
 |-----------------------------------|-----------------------------------------------------------------------|
-| Target platforms                  | Android only (minSdk 21)                                              |
+| Target platforms                  | Android (minSdk 21) + Windows (sqflite via FFI; Inno Setup installer) |
 | State management                  | **Riverpod** (`flutter_riverpod`)                                     |
 | HTTP client                       | **Dio** (mirrors Axios usage in JS frontend)                          |
 | Local persistence                 | **shared_preferences** — saves primaryBible, comparisonBible, book, chapter |

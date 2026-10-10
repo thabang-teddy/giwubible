@@ -31,9 +31,17 @@ Open this folder (`kotlin/`) directly in Android Studio.
 ```
 
 `local.properties` needs `sdk.dir` pointing at the Android SDK (Android Studio
-writes this automatically). The release build is currently signed with the
-debug keystore, matching the Flutter build — replace `signingConfig` in
-[`app/build.gradle.kts`](app/build.gradle.kts) before publishing.
+writes this automatically).
+
+**Signing.** The release build is signed with the local debug keystore,
+matching the Flutter build's `signingConfig`. That is fine for sideloading and
+testing, but a debug-signed APK cannot go to Play, and the keystore differs per
+machine — a build from another machine will not install over it. Replace
+`signingConfig` in [`app/build.gradle.kts`](app/build.gradle.kts) with a real
+release key before publishing anywhere.
+
+A built APK is kept out of git (`*.apk` in `.gitignore`); `dist/` is where this
+project's exported builds land.
 
 ## How it maps to the Flutter app
 
@@ -115,6 +123,10 @@ emulator (API 35):
   `/books` and the quoted integers some PHP/SQLite builds emit.
 - `./gradlew :app:testDebugUnitTest` — 54 tests, all passing.
 - `./gradlew :app:lintDebug` — no errors.
+- The R8-minified release APK (1.9 MB) was installed on the same emulator and
+  ran the same download-and-read flow. That is the check that matters after
+  minification: kotlinx.serialization decodes the download payload reflectively
+  enough that a missing keep rule would only show up at runtime.
 
 ## Tests
 

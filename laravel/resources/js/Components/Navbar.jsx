@@ -4,12 +4,12 @@ import { useAuth } from '../hooks/useAuth'
 
 export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onReset, onMenuOpen, bookmarkCount = 0 }) {
   const [versionOpen, setVersionOpen] = useState(false)
-  const [userOpen, setUserOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [dark, setDark] = useState(() => {
     try { return localStorage.getItem('giwu_dark') === 'true' } catch { return false }
   })
   const versionRef = useRef(null)
-  const userRef = useRef(null)
+  const settingsRef = useRef(null)
   const { user, logout } = useAuth()
 
   const current = bibles?.find((b) => b.table === primaryBible)
@@ -20,17 +20,31 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
   }, [dark])
 
   useEffect(() => {
-    if (!versionOpen && !userOpen) return
-    const handler = (e) => {
+    if (!versionOpen && !settingsOpen) return
+    const onPointerDown = (e) => {
       if (!versionRef.current?.contains(e.target)) setVersionOpen(false)
-      if (!userRef.current?.contains(e.target)) setUserOpen(false)
+      if (!settingsRef.current?.contains(e.target)) setSettingsOpen(false)
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [versionOpen, userOpen])
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return
+      setVersionOpen(false)
+      setSettingsOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [versionOpen, settingsOpen])
+
+  const go = (href) => {
+    setSettingsOpen(false)
+    router.visit(href)
+  }
 
   const handleLogout = () => {
-    setUserOpen(false)
+    setSettingsOpen(false)
     logout()
   }
 
@@ -141,42 +155,44 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
           )}
         </div>
 
-        {/* User menu */}
-        <div ref={userRef} style={{ position: 'relative' }}>
+        {/* Settings — the account links live in this list, not behind their own icon */}
+        <div ref={settingsRef} style={{ position: 'relative' }}>
           <button
             className="navbar-icon-btn"
-            onClick={() => user ? setUserOpen((o) => !o) : router.visit('/login')}
-            title={user ? `Signed in as ${user.name}` : 'Sign in'}
-            aria-label={user ? 'User menu' : 'Sign in'}
+            onClick={() => setSettingsOpen((o) => !o)}
+            title={user ? `Settings — signed in as ${user.name}` : 'Settings'}
+            aria-label="Settings"
+            aria-haspopup="menu"
+            aria-expanded={settingsOpen}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               style={{ color: user ? 'var(--primary)' : 'currentColor' }}
             >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
           </button>
 
-          {userOpen && user && (
-            <div className="version-dropdown" style={{ right: 0, left: 'auto', minWidth: 160 }}>
-              <div style={{ padding: '8px 12px', fontSize: 12, color: 'var(--gray-400)', borderBottom: '1px solid var(--border)' }}>
-                {user.email}
-              </div>
-              <button
-                className="version-dropdown-item"
-                onClick={() => { setUserOpen(false); router.visit('/profile') }}
-              >
-                Profile
-              </button>
-              <button
-                className="version-dropdown-item"
-                onClick={() => { setUserOpen(false); router.visit('/bookmarks') }}
-              >
-                Bookmarks
-              </button>
-              <button className="version-dropdown-item" onClick={handleLogout}>
-                Sign out
-              </button>
+          {settingsOpen && (
+            <div className="version-dropdown" role="menu" style={{ right: 0, left: 'auto', minWidth: 180 }}>
+              {user ? (
+                <>
+                  <div className="settings-dropdown-identity">{user.email}</div>
+                  <button className="version-dropdown-item" role="menuitem" onClick={() => go('/profile')}>
+                    Profile
+                  </button>
+                  <button className="version-dropdown-item" role="menuitem" onClick={() => go('/bookmarks')}>
+                    Bookmarks
+                  </button>
+                  <button className="version-dropdown-item" role="menuitem" onClick={handleLogout}>
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <button className="version-dropdown-item" role="menuitem" onClick={() => go('/login')}>
+                  Sign in
+                </button>
+              )}
             </div>
           )}
         </div>

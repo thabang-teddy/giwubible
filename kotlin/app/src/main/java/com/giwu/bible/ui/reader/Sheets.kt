@@ -21,14 +21,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Logout
-import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -157,42 +154,6 @@ fun BiblePickerSheet(
                 )
             }
         }
-    }
-}
-
-/** Who is signed in, with the two things they can do about it. */
-@Composable
-fun AccountSheet(
-    name: String,
-    email: String,
-    onDismiss: () -> Unit,
-    onOpenBookmarks: () -> Unit,
-    onSignOut: () -> Unit,
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) {
-            Text(text = name, style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = email,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.giwu.muted,
-            )
-        }
-        HorizontalDivider()
-        ListItem(
-            leadingContent = { Icon(Icons.Outlined.BookmarkBorder, contentDescription = null) },
-            headlineContent = { Text("Bookmarks") },
-            modifier = Modifier.clickable(onClick = onOpenBookmarks),
-        )
-        ListItem(
-            leadingContent = {
-                Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null)
-            },
-            headlineContent = { Text("Sign out") },
-            modifier = Modifier.clickable(onClick = onSignOut),
-        )
-        Spacer(Modifier.height(12.dp))
     }
 }
 

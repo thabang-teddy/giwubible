@@ -20,9 +20,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Menu
@@ -125,7 +125,6 @@ fun ReadScreen(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     var showPanelSheet by remember { mutableStateOf(false) }
     var showBiblePicker by remember { mutableStateOf(false) }
-    var showAccount by remember { mutableStateOf(false) }
     var showVoiceData by remember { mutableStateOf(false) }
 
     // The engine may have gained voice data while the reader was away.
@@ -158,9 +157,7 @@ fun ReadScreen(
                         onReset = viewModel::reset,
                         onToggleDarkMode = prefs::toggleDarkMode,
                         onOpenBookmarks = onOpenBookmarks,
-                        onOpenAccount = {
-                            if (user != null) showAccount = true else onOpenLogin()
-                        },
+                        onOpenSettings = onOpenSettings,
                         onOpenBiblePicker = { showBiblePicker = true },
                     )
                 },
@@ -344,25 +341,6 @@ fun ReadScreen(
         )
     }
 
-    if (showAccount) {
-        val signedIn = user
-        if (signedIn != null) {
-            AccountSheet(
-                name = signedIn.name,
-                email = signedIn.email,
-                onDismiss = { showAccount = false },
-                onOpenBookmarks = {
-                    showAccount = false
-                    onOpenBookmarks()
-                },
-                onSignOut = {
-                    showAccount = false
-                    scope.launch { graph.auth.logout() }
-                },
-            )
-        }
-    }
-
     if (showVoiceData) {
         VoiceDataSheet(
             onDismiss = { showVoiceData = false },
@@ -386,7 +364,7 @@ private fun ReaderTopBar(
     onReset: () -> Unit,
     onToggleDarkMode: () -> Unit,
     onOpenBookmarks: () -> Unit,
-    onOpenAccount: () -> Unit,
+    onOpenSettings: () -> Unit,
     onOpenBiblePicker: () -> Unit,
 ) {
     TopAppBar(
@@ -459,10 +437,10 @@ private fun ReaderTopBar(
                     )
                 }
             }
-            IconButton(onClick = onOpenAccount, modifier = Modifier.size(ActionSize)) {
+            IconButton(onClick = onOpenSettings, modifier = Modifier.size(ActionSize)) {
                 Icon(
-                    imageVector = Icons.Outlined.AccountCircle,
-                    contentDescription = if (isSignedIn) "Account" else "Sign in",
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = "Settings",
                     tint = if (isSignedIn) {
                         MaterialTheme.colorScheme.primary
                     } else {

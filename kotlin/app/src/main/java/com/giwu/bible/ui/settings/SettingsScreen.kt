@@ -16,7 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Login
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Dns
@@ -77,6 +81,8 @@ fun SettingsScreen(
     graph: AppGraph,
     onBack: () -> Unit,
     onManageTranslations: () -> Unit,
+    onOpenBookmarks: () -> Unit,
+    onOpenLogin: () -> Unit,
 ) {
     val prefs = container.prefs
     val context = LocalContext.current
@@ -88,6 +94,7 @@ fun SettingsScreen(
     val announceNumbers by prefs.announceVerseNumbers.collectAsStateWithLifecycle()
     val continueToNext by prefs.continueToNextChapter.collectAsStateWithLifecycle()
     val serverUrl by graph.serverSettings.url.collectAsStateWithLifecycle()
+    val user by graph.auth.user.collectAsStateWithLifecycle()
 
     var voiceState by remember { mutableStateOf<TtsReadiness?>(null) }
     var showServerDialog by remember { mutableStateOf(false) }
@@ -117,6 +124,57 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState()),
         ) {
+            // The account lives here now rather than behind its own top-bar
+            // icon, and it goes first: who you are signed in as is the thing
+            // readers come to this screen looking for.
+            SectionHeader("ACCOUNT")
+            val signedIn = user
+            if (signedIn != null) {
+                ListItem(
+                    leadingContent = {
+                        Icon(Icons.Outlined.AccountCircle, contentDescription = null)
+                    },
+                    headlineContent = { Text(signedIn.name) },
+                    supportingContent = {
+                        Text(
+                            text = signedIn.email,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                )
+                ListItem(
+                    leadingContent = {
+                        Icon(Icons.Outlined.BookmarkBorder, contentDescription = null)
+                    },
+                    headlineContent = { Text("Bookmarks") },
+                    trailingContent = {
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable(onClick = onOpenBookmarks),
+                )
+                ListItem(
+                    leadingContent = {
+                        Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null)
+                    },
+                    headlineContent = { Text("Sign out") },
+                    modifier = Modifier.clickable { scope.launch { graph.auth.logout() } },
+                )
+            } else {
+                ListItem(
+                    leadingContent = {
+                        Icon(Icons.AutoMirrored.Outlined.Login, contentDescription = null)
+                    },
+                    headlineContent = { Text("Sign in") },
+                    supportingContent = { Text("Sync your bookmarks across devices") },
+                    trailingContent = {
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable(onClick = onOpenLogin),
+                )
+            }
+            HorizontalDivider(color = MaterialTheme.giwu.divider)
+
             SectionHeader("APPEARANCE")
             ListItem(
                 leadingContent = {

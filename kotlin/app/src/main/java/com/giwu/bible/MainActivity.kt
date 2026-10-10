@@ -124,6 +124,8 @@ private fun GiwuNavHost(container: AppContainer, graph: AppGraph) {
                 graph = graph,
                 onBack = { navController.popBackStack() },
                 onManageTranslations = { navController.navigate(Routes.WELCOME) },
+                onOpenBookmarks = { navController.navigate(Routes.BOOKMARKS) },
+                onOpenLogin = { navController.navigate(Routes.LOGIN) },
             )
         }
         composable(Routes.LOGIN) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Head, router } from '@inertiajs/react'
+import { Head } from '@inertiajs/react'
 import Navbar from '../Components/Navbar'
 import Sidebar from '../Components/Sidebar'
 import MainColumn from '../Components/MainColumn'
@@ -76,10 +76,8 @@ export default function Read({ bibles = [], books = [] }) {
     if (v !== null) setPanelOpen(true)
   }
 
-  const handleBookmarkToggle = (verse, text) => {
-    if (!user) { router.visit('/login'); return }
+  const handleBookmarkToggle = (verse, text) =>
     toggleBookmark(primaryBible, book, chapter, verse, text)
-  }
 
   const closeAll = () => { setSidebarOpen(false); setPanelOpen(false) }
 
@@ -120,8 +118,8 @@ export default function Read({ bibles = [], books = [] }) {
           onChapterChange={handleChapterChange}
           activeVerse={activeVerse}
           setActiveVerse={handleVerseSelect}
-          isBookmarked={isBookmarked}
-          onBookmarkToggle={handleBookmarkToggle}
+          isBookmarked={user ? isBookmarked : undefined}
+          onBookmarkToggle={user ? handleBookmarkToggle : undefined}
         />
 
         <VersePanel

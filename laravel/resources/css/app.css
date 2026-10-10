@@ -558,26 +558,6 @@ body {
   transform: translateX(-50%);
 }
 
-.footer-icons {
-  display: flex;
-  gap: 14px;
-  color: var(--gray-400);
-  font-size: 15px;
-}
-
-.footer-icon-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--gray-400);
-  display: flex;
-  align-items: center;
-  transition: color 0.1s;
-}
-
-.footer-icon-btn:hover { color: var(--gray-600); }
-
 /* ── Loading skeleton ──────────────────────────────── */
 .skeleton {
   background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-50) 50%, var(--gray-100) 75%);
@@ -643,9 +623,6 @@ body {
   padding: 0;
 }
 .drawer-close-btn:hover { background: var(--gray-100); color: var(--gray-700); }
-
-/* ── Footer panel toggle (hidden on desktop) ── */
-.footer-panel-btn { display: none; }
 
 /* ── Panel tabs close area (hidden on desktop) ── */
 .panel-tabs-close { display: none; }
@@ -734,10 +711,9 @@ body {
   /* Chapter nav: tighter */
   .chapter-nav-bar { padding: 12px 0 0; }
 
-  /* Footer: hide tagline, show panel toggle */
+  /* Footer: hide tagline on narrow screens */
   .footer-tagline { display: none; }
   .app-footer { padding: 0 16px; }
-  .footer-panel-btn { display: flex; }
   .footer-verse-ref--link:hover { color: var(--primary); }
 }
 

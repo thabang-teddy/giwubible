@@ -86,21 +86,23 @@ export default function Navbar({ bibles, primaryBible, onPrimaryBibleChange, onR
           )}
         </button>
 
-        {/* Bookmarks */}
-        <Link
-          href="/bookmarks"
-          className="navbar-icon-btn"
-          title="Bookmarks"
-          aria-label="Bookmarks"
-          style={{ position: 'relative', textDecoration: 'none' }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-          </svg>
-          {bookmarkCount > 0 && (
-            <span className="bookmark-badge">{bookmarkCount > 9 ? '9+' : bookmarkCount}</span>
-          )}
-        </Link>
+        {/* Bookmarks — signed-in readers only */}
+        {user && (
+          <Link
+            href="/bookmarks"
+            className="navbar-icon-btn"
+            title="Bookmarks"
+            aria-label="Bookmarks"
+            style={{ position: 'relative', textDecoration: 'none' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+            </svg>
+            {bookmarkCount > 0 && (
+              <span className="bookmark-badge">{bookmarkCount > 9 ? '9+' : bookmarkCount}</span>
+            )}
+          </Link>
+        )}
 
         {/* Version picker */}
         <div ref={versionRef} style={{ position: 'relative' }}>

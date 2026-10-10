@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- The bible database is re-downloadable and large; the auth token is a
+         device-bound secret. Neither belongs in a backup. -->
+    <exclude domain="database" path="giwu_bible.db" />
+    <exclude domain="sharedpref" path="giwu_secure.xml" />
+</full-backup-content>

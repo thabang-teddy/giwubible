@@ -133,7 +133,8 @@ flutter build windows         # Release build (CI wraps it in an Inno installer)
 > Open `kotlin/` (not the repo root) in Android Studio. API base URL default is
 > `DEFAULT_BASE_URL` in `data/remote/ApiClient.kt`; the reader can override it
 > in Settings, and the chosen URL is stored in `app_settings.server_url`.
-> Application ID is `com.giwu.bible.kt`. Read-aloud uses Android's own
+> Application ID is `com.giwu.bible` — the identity the Flutter build shipped
+> under, so a new APK updates the installed app. Read-aloud uses Android's own
 > `TextToSpeech` rather than the Flutter build's downloaded sherpa-onnx voice —
 > see `kotlin/README.md` for the full Flutter-to-Kotlin mapping and the
 > deliberate differences.

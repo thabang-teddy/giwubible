@@ -17,9 +17,10 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // Distinct from the Flutter build's com.giwu.bible so both can be
-        // installed side by side while the port is compared against it.
-        applicationId = "com.giwu.bible.kt"
+        // The identity of the shipped Android app, inherited from the Flutter
+        // build this replaced, so an install updates it rather than sitting
+        // beside it.
+        applicationId = "com.giwu.bible"
         minSdk = 21
         targetSdk = 36
         versionCode = giwuVersionCode

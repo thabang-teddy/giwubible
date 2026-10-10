@@ -10,7 +10,7 @@ Open this folder (`kotlin/`) directly in Android Studio.
 |---|---|
 | Language | Kotlin, Jetpack Compose (Material 3) |
 | Min / target SDK | 21 / 36 |
-| Application ID | `com.giwu.bible.kt` — distinct from the Flutter build's `com.giwu.bible`, so both install side by side |
+| Application ID | `com.giwu.bible` — the same identity the Flutter build shipped under, so this replaces it on a device |
 | HTTP | OkHttp + kotlinx.serialization |
 | Storage | `SQLiteOpenHelper` (bible text), SharedPreferences (reader settings), `EncryptedSharedPreferences` (auth token) |
 | State | `StateFlow` + `ViewModel`, hand-rolled DI in [`AppContainer`](app/src/main/java/com/giwu/bible/AppContainer.kt) |
@@ -33,12 +33,21 @@ Open this folder (`kotlin/`) directly in Android Studio.
 `local.properties` needs `sdk.dir` pointing at the Android SDK (Android Studio
 writes this automatically).
 
-**Signing.** The release build is signed with the local debug keystore,
-matching the Flutter build's `signingConfig`. That is fine for sideloading and
-testing, but a debug-signed APK cannot go to Play, and the keystore differs per
-machine — a build from another machine will not install over it. Replace
-`signingConfig` in [`app/build.gradle.kts`](app/build.gradle.kts) with a real
-release key before publishing anywhere.
+**Signing — read this before handing anyone a build.** The release build is
+signed with the local debug keystore, matching the Flutter build's
+`signingConfig`. Since this app ships under the same `com.giwu.bible` identity
+the Flutter one did, Android treats a new APK as an *update* to whatever is
+installed — and refuses it outright when the signing key differs
+(`INSTALL_FAILED_UPDATE_INCOMPATIBLE`). A debug keystore is per machine, and CI
+runners generate a fresh one per run, so today that means:
+
+- an existing Flutter-built install has to be uninstalled before this one goes
+  on, losing its downloaded translations;
+- consecutive CI releases will not update each other either.
+
+Setting up one real release keystore in
+[`app/build.gradle.kts`](app/build.gradle.kts) — signed from a CI secret —
+fixes all of it, and is required for Play regardless.
 
 A built APK is kept out of git (`*.apk` in `.gitignore`); `dist/` is where this
 project's exported builds land.

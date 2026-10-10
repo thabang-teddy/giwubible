@@ -10,6 +10,7 @@ Multi-version Bible reader. Users read a primary chapter (KJV by default) and cl
 |--------------------|--------------------------------------------------------------------------------|
 | Web Frontend       | React 19 via **Inertia.js**, served from Laravel (`laravel/resources/js`), Bootstrap 5 |
 | Mobile App         | Flutter (Android + Windows desktop)                                            |
+| Mobile App (native)| Kotlin + Jetpack Compose (`kotlin/`) — Android recreation of the Flutter reader |
 | Backend            | Laravel 10 — Inertia (web) **and** a JSON REST API (`/api`, for Flutter)       |
 | Database           | SQLite (`bible-sqlite.db`, read-only) + `database.sqlite` (users/bookmarks)    |
 | Auth               | Sanctum: session/cookie for web (Inertia), personal-access tokens for `/api` (Flutter) |
@@ -54,6 +55,16 @@ flutter/fn.giwu/     # Flutter Android app (consumes /api — unchanged)
     api/             # Dio client + API wrappers (base URL -> the laravel/ app's /api)
     providers/ widgets/ models/ pages/
   android/
+
+kotlin/              # Native Android app, Android Studio project root (consumes /api)
+  app/src/main/java/com/giwu/bible/
+    AppContainer.kt  # Hand-rolled DI: prefs, database, HTTP, stores, TTS
+    MainActivity.kt  # Compose entry point + navigation graph
+    data/            # BibleDatabase (SQLiteOpenHelper), AppPrefs, remote/ (OkHttp)
+    repo/            # BibleRepository, AuthStore, BookmarkStore, ServerSettings
+    tts/             # TtsEngine + AndroidTtsEngine + TtsController
+    ui/              # reader/, welcome/, settings/, auth/, bookmarks/, theme/
+  app/src/test/      # JVM unit tests (no device needed)
 ```
 
 ---
@@ -107,6 +118,21 @@ flutter build apk --split-per-abi   # Smaller per-ABI release APKs
 
 > The backend lives in the same `laravel/` folder as the web app (see above).
 > There is no longer a separate `php/api.giwu/` app.
+
+### Native Android app (`kotlin/`)
+```bash
+./gradlew :app:installDebug          # Build and install on a device/emulator
+./gradlew :app:testDebugUnitTest     # JVM unit tests
+./gradlew :app:assembleRelease       # Release APK
+```
+
+> Open `kotlin/` (not the repo root) in Android Studio. API base URL default is
+> `DEFAULT_BASE_URL` in `data/remote/ApiClient.kt`; the reader can override it
+> in Settings, and the chosen URL is stored in `app_settings.server_url`.
+> Application ID is `com.giwu.bible.kt`, so it installs alongside the Flutter
+> build. Read-aloud uses Android's own `TextToSpeech` rather than the Flutter
+> build's downloaded sherpa-onnx voice — see `kotlin/README.md` for the full
+> Flutter-to-Kotlin mapping and the deliberate differences.
 
 ---
 

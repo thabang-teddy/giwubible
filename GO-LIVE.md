@@ -445,8 +445,9 @@ site comes up: a backup nobody has restored is a hypothesis.
 5. Watch `~/logs/deploy.log` to completion. A failure leaves the site in
    maintenance mode — that is the design, not a bug.
 6. Walk §6 against production.
-7. Point the Flutter app's base URL at `https://giwu.co.za`, rebuild the APK,
-   and put it in `public/downloads/`.
+7. Check the Kotlin app's base URL (`DEFAULT_BASE_URL` in
+   `kotlin/.../data/remote/ApiClient.kt`) points at `https://giwu.co.za/api/`,
+   rebuild the APK, and put it in `public/downloads/`.
 8. Announce it.
 
 **Rollback is roll-forward.** There are no release directories, and the artefact

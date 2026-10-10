@@ -12,7 +12,8 @@ A multi-version Bible reader. Read a primary chapter (KJV by default) and tap an
 giwubible/
 ├── js/fn.giwu/        # React frontend (Vite + Bootstrap 5)
 ├── php/api.giwu/      # Laravel 10 REST API
-└── flutter/fn.giwu/   # Flutter mobile/desktop app
+├── flutter/fn.giwu/   # Flutter Windows desktop app
+└── kotlin/            # Native Android app (Kotlin + Jetpack Compose)
 ```
 
 ---
@@ -217,22 +218,35 @@ If you upload via FTP, make sure hidden files (`.htaccess`) are visible and tran
 
 ---
 
-## Flutter App
+## Android App (Kotlin)
+
+The shipped APK is the native Kotlin app in `kotlin/` — open that folder in
+Android Studio.
+
+```bash
+cd kotlin
+./gradlew :app:installDebug      # Build and install on a device/emulator
+./gradlew :app:testDebugUnitTest # JVM unit tests
+./gradlew :app:assembleRelease   # Release APK, what CI attaches to a release
+```
+
+The API base URL defaults to `https://giwu.co.za/api/` (`DEFAULT_BASE_URL` in
+`data/remote/ApiClient.kt`) and can be changed in the app's Settings screen.
+See [kotlin/README.md](kotlin/README.md) for the full picture.
+
+## Windows App (Flutter)
 
 ```bash
 cd flutter/fn.giwu
 flutter pub get
-
-# Run on device/emulator
-flutter run -d android
 flutter run -d windows
-
-# Production builds
-flutter build apk
 flutter build windows
 ```
 
-The API base URL is set in `lib/api/client.dart`. Update `baseUrl` to point at your live API before building for production.
+Windows is the only platform this project targets; the `android/` folder was
+removed when the Android app moved to Kotlin. The API base URL is set in
+`lib/api/client.dart` — update `baseUrl` to point at your live API before
+building for production.
 
 ---
 
@@ -242,5 +256,6 @@ The API base URL is set in `lib/api/client.dart`. Update `baseUrl` to point at y
 |-------|-----------|
 | Frontend | React 18, Vite, Bootstrap 5 |
 | API | Laravel 10, SQLite (read-only) |
-| Mobile / Desktop | Flutter, Riverpod, Dio |
+| Android | Kotlin, Jetpack Compose, OkHttp |
+| Windows | Flutter, Riverpod, Dio |
 | Database | `bible-sqlite.db` — static data file, no migrations |

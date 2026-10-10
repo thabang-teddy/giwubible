@@ -5,6 +5,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// The release version comes from CI so the APK, the git tag and the Windows
+// installer all agree; that single version still lives in the Flutter app's
+// pubspec.yaml, which is what the release job reads. A local build falls back
+// to the values below.
+val giwuVersionName = (findProperty("giwuVersionName") as String?) ?: "1.0.0"
+val giwuVersionCode = (findProperty("giwuVersionCode") as String?)?.toIntOrNull() ?: 1
+
 android {
     namespace = "com.giwu.bible"
     compileSdk = 36
@@ -15,8 +22,8 @@ android {
         applicationId = "com.giwu.bible.kt"
         minSdk = 21
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = giwuVersionCode
+        versionName = giwuVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

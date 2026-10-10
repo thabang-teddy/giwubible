@@ -43,6 +43,17 @@ release key before publishing anywhere.
 A built APK is kept out of git (`*.apk` in `.gitignore`); `dist/` is where this
 project's exported builds land.
 
+**CI.** The `kotlin` job in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
+runs the unit tests and lint on every push and pull request, and the `release`
+job builds this project's APK and attaches it to the staging pre-release. The
+version is stamped from the Flutter app's `pubspec.yaml` — one version for the
+APK, the git tag and the Windows installer — through
+`-PgiwuVersionName` and `-PgiwuVersionCode`:
+
+```bash
+./gradlew :app:assembleRelease -PgiwuVersionName=1.0.0 -PgiwuVersionCode=42
+```
+
 ## How it maps to the Flutter app
 
 | Flutter | Kotlin |

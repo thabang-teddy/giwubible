@@ -1,6 +1,6 @@
 # Giwu Bible CI.
 #
-# Three checks and one shipper:
+# Four checks and one shipper:
 #
 #   php      Pint, the PHPUnit suite, and a boot smoke that proves the release
 #            caches (config/route/view) actually build. Runs on the PHP version
@@ -9,7 +9,9 @@
 #   js       The Vite build. public/build is git-ignored, so the bundle the
 #            server runs is the one THIS job proves builds — nothing else
 #            produces it.
-#   flutter  `flutter analyze` and `flutter test` for the Android app.
+#   flutter  `flutter analyze` and `flutter test` for the Windows desktop app.
+#   kotlin   Unit tests and lint for the native Android app in kotlin/, which
+#            is what the released APK is built from.
 #   cpanel   Builds the deploy artefact and publishes it for the account to
 #            pull. staging -> staging host, master -> production host.
 #
@@ -147,6 +149,40 @@ jobs:
       - name: Test
         working-directory: flutter/fn.giwu
         run: flutter test
+
+  # ---------------------------------------------------------------------------
+  # The Android app.
+  #
+  # Native Kotlin, in kotlin/. The Flutter project no longer carries an android/
+  # folder: it builds the Windows desktop app only. Gates the release the same
+  # way `flutter` does — a red app build means no tag and no downloads.
+  #
+  # The runner's Android SDK is found through ANDROID_HOME, so no
+  # local.properties is written here.
+  # ---------------------------------------------------------------------------
+  kotlin:
+    name: Kotlin — test and lint the Android app
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: kotlin
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Test
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Lint
+        run: ./gradlew :app:lintDebug
 
   # ---------------------------------------------------------------------------
   # The artefact.
@@ -341,8 +377,12 @@ jobs:
   #          installer attached, so both are downloadable from the
   #          repository's Releases page (and the site's /download page).
   #
+  # The APK is the native Kotlin app (kotlin/); the installer is the Flutter
+  # Windows build. Both carry the version from pubspec.yaml, which stays the
+  # single source for the tag even though only the desktop app is Flutter now.
+  #
   # NOTE: the release build is still signed with the DEBUG key (see
-  # android/app/build.gradle.kts). Fine for sideloading staging builds; set up a
+  # kotlin/app/build.gradle.kts). Fine for sideloading staging builds; set up a
   # real upload keystore before publishing anywhere else. The Windows installer
   # is unsigned, so SmartScreen will warn on first run.
   # ---------------------------------------------------------------------------
@@ -350,7 +390,7 @@ jobs:
     name: Tag and publish the Android APK and Windows installer
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [php, js, flutter, cpanel, windows]
+    needs: [php, js, flutter, kotlin, cpanel, windows]
 
     if: github.event_name == 'push' && github.ref_name == 'staging'
 
@@ -368,24 +408,24 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
+      # Same TAG as the windows job. Reading the version is a grep, so this
+      # needs no Flutter toolchain.
       - name: Resolve the version
         working-directory: flutter/fn.giwu
         run: |
           VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([0-9.]+).*/\1/')
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "TAG=v${VERSION}-staging.${{ github.run_number }}" >> "$GITHUB_ENV"
 
       - name: Build the APK
-        working-directory: flutter/fn.giwu
+        working-directory: kotlin
         run: |
-          flutter pub get
-          flutter build apk --release --build-number=${{ github.run_number }}
-          cp build/app/outputs/flutter-apk/app-release.apk "giwubible-${TAG}.apk"
+          ./gradlew :app:assembleRelease \
+            "-PgiwuVersionName=${VERSION}" \
+            "-PgiwuVersionCode=${{ github.run_number }}"
+          cp app/build/outputs/apk/release/app-release.apk "giwubible-${TAG}.apk"
 
       - uses: actions/download-artifact@v4
         with:
@@ -397,7 +437,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$TAG" \
-            "flutter/fn.giwu/giwubible-${TAG}.apk" \
+            "kotlin/giwubible-${TAG}.apk" \
             "flutter/fn.giwu/giwubible-${TAG}-windows-setup.exe" \
             --target "${{ github.sha }}" \
             --prerelease \

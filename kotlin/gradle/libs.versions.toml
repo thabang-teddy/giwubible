@@ -3,7 +3,7 @@
 # BOM 2026.x) requires Android Gradle plugin 9.1+ and raises minSdk to 24, so
 # that upgrade is a deliberate decision rather than a routine version bump.
 [versions]
-agp = "8.13.1"
+agp = "9.2.1"
 kotlin = "2.2.21"
 coreKtx = "1.17.0"
 activityCompose = "1.11.0"

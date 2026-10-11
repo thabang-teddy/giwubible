@@ -27,17 +27,16 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   flutter_launcher_icons: ^0.14.3
 
+# Windows only. The Android app is the native Kotlin one in kotlin/, and it
+# carries its own launcher icons under app/src/main/res.
 flutter_launcher_icons:
   image_path: "assets/icon.png"
-  android: true
+  android: false
   ios: false
-  min_sdk_android: 21
   windows:
     generate: true
     image_path: "assets/icon.png"
     icon_size: 256
-  adaptive_icon_background: "#1a1a1a"
-  adaptive_icon_foreground: "assets/icon.png"
 
 flutter:
   uses-material-design: true

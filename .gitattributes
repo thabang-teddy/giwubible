@@ -1,2 +1,5 @@
 # Hook scripts run under bash; a CRLF checkout breaks them (stray carriage returns).
 .githooks/* text eol=lf
+
+# Same for the Gradle wrapper script, which is run from Git Bash on Windows.
+gradlew text eol=lf

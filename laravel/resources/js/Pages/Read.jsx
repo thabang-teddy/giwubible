@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Head, router } from '@inertiajs/react'
+import { Head } from '@inertiajs/react'
 import Navbar from '../Components/Navbar'
+import SettingsDrawer from '../Components/SettingsDrawer'
 import Sidebar from '../Components/Sidebar'
 import MainColumn from '../Components/MainColumn'
 import VersePanel from '../Components/VersePanel'
@@ -22,25 +23,30 @@ const params = typeof window !== 'undefined'
   ? new URLSearchParams(window.location.search)
   : new URLSearchParams()
 
-export default function Read({ bibles = [], books = [] }) {
+// `initial` is the server's reading of a shared /read/{book}/{chapter}?v={verse}
+// link. It outranks both the query string and the reader's stored position.
+export default function Read({ bibles = [], books = [], initial = null }) {
   const { user } = useAuth()
   const { bookmarks, isBookmarked, toggle: toggleBookmark } = useBookmarks()
 
-  const [primaryBible, setPrimaryBible] = useState(() => params.get('bible') ?? ls('giwu_bible', 't_kjv'))
+  const [primaryBible, setPrimaryBible] = useState(
+    () => initial?.bible ?? params.get('bible') ?? ls('giwu_bible', 't_kjv'),
+  )
   const [book, setBook] = useState(() => {
     const b = params.get('book')
-    return b ? Number(b) : ls('giwu_book', 1)
+    return initial?.book ?? (b ? Number(b) : ls('giwu_book', 1))
   })
   const [chapter, setChapter] = useState(() => {
     const c = params.get('chapter')
-    return c ? Number(c) : ls('giwu_chapter', 1)
+    return initial?.chapter ?? (c ? Number(c) : ls('giwu_chapter', 1))
   })
   const [activeVerse, setActiveVerse] = useState(() => {
     const v = params.get('verse')
-    return v ? Number(v) : null
+    return initial?.verse ?? (v ? Number(v) : null)
   })
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [panelOpen, setPanelOpen] = useState(() => !!params.get('verse'))
+  const [panelOpen, setPanelOpen] = useState(() => !!(initial?.verse ?? params.get('verse')))
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => { localStorage.setItem('giwu_bible', JSON.stringify(primaryBible)) }, [primaryBible])
   useEffect(() => { localStorage.setItem('giwu_book', JSON.stringify(book)) }, [book])
@@ -76,10 +82,8 @@ export default function Read({ bibles = [], books = [] }) {
     if (v !== null) setPanelOpen(true)
   }
 
-  const handleBookmarkToggle = (verse, text) => {
-    if (!user) { router.visit('/login'); return }
+  const handleBookmarkToggle = (verse, text) =>
     toggleBookmark(primaryBible, book, chapter, verse, text)
-  }
 
   const closeAll = () => { setSidebarOpen(false); setPanelOpen(false) }
 
@@ -90,12 +94,18 @@ export default function Read({ bibles = [], books = [] }) {
     <div className="app">
       <Head title={currentBook ? `${currentBook.n} ${chapter}` : 'Read'} />
       <Navbar
+        onMenuOpen={() => setSidebarOpen(true)}
+        onSettingsOpen={() => setSettingsOpen(true)}
+        bookmarkCount={bookmarks.length}
+      />
+
+      <SettingsDrawer
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
         bibles={bibles}
         primaryBible={primaryBible}
         onPrimaryBibleChange={handlePrimaryBibleChange}
         onReset={handleReset}
-        onMenuOpen={() => setSidebarOpen(true)}
-        bookmarkCount={bookmarks.length}
       />
 
       <div
@@ -120,8 +130,8 @@ export default function Read({ bibles = [], books = [] }) {
           onChapterChange={handleChapterChange}
           activeVerse={activeVerse}
           setActiveVerse={handleVerseSelect}
-          isBookmarked={isBookmarked}
-          onBookmarkToggle={handleBookmarkToggle}
+          isBookmarked={user ? isBookmarked : undefined}
+          onBookmarkToggle={user ? handleBookmarkToggle : undefined}
         />
 
         <VersePanel

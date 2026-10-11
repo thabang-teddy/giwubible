@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/read', ReadController::class)->name('read');
+Route::get('/read/{book}/{chapter}', [ReadController::class, 'chapter'])
+    ->whereNumber('chapter')
+    ->name('read.chapter');
 Route::get('/download', DownloadController::class)->name('download');
 Route::get('/download/{platform}', [DownloadController::class, 'asset'])->name('download.asset');
 

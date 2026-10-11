@@ -8,6 +8,7 @@ use App\Models\BibleVersionKey;
 use App\Models\KeyEnglish;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Read-only access to the static bible-sqlite.db.
@@ -31,6 +32,35 @@ class BibleRepository
         return KeyEnglish::select('b', 'n', 't')
             ->orderBy('b')
             ->get();
+    }
+
+    /**
+     * Resolve the `{book}` segment of a shared link to its book row.
+     *
+     * Shared links carry a readable slug ("song-of-solomon"), but a bare book
+     * number is accepted too so older links and hand-typed URLs still land.
+     */
+    public function resolveBook(string $requested): ?object
+    {
+        $requested = trim($requested);
+
+        if (ctype_digit($requested)) {
+            return $this->books()->firstWhere('b', (int) $requested);
+        }
+
+        $slug = Str::slug($requested);
+
+        return $this->books()->first(fn ($book) => Str::slug($book->n) === $slug);
+    }
+
+    /** True when the chapter has at least one verse in the given table. */
+    public function hasChapter(string $table, int $book, int $chapter): bool
+    {
+        return DB::connection('bible_sqlite')
+            ->table($table)
+            ->where('b', $book)
+            ->where('c', $chapter)
+            ->exists();
     }
 
     /** Resolve a requested table name to a real table, or null if unknown. */

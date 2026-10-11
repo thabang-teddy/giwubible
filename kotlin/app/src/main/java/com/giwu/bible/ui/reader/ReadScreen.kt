@@ -116,9 +116,6 @@ fun ReadScreen(
 
     val currentBook = books.valueOrNull?.firstOrNull { it.number == book }
     val currentBible = bibles.firstOrNull { it.table == primaryBible }
-    val isBookmarked = activeVerse?.let { verse ->
-        bookmarks.valueOrNull?.any { it.matches(primaryBible, book, chapter, verse) } == true
-    } == true
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val settingsDrawerState = rememberDrawerState(DrawerValue.Closed)
@@ -158,37 +155,22 @@ fun ReadScreen(
                         bookName = currentBook?.name,
                         chapter = chapter,
                         verse = activeVerse,
-                        versionAbbreviation = currentBible?.abbreviation,
-                        isBookmarked = isBookmarked,
+                        versionName = currentBible?.version,
                         onOpenPanel = if (activeVerse != null && !isWide) {
                             { showPanelSheet = true }
                         } else {
                             null
                         },
-                        onToggleBookmark = activeVerse?.let { verse ->
-                            {
-                                if (user == null) {
-                                    onOpenLogin()
-                                } else {
-                                    scope.launch {
-                                        viewModel.toggleBookmark(verse)?.let {
-                                            snackbars.showSnackbar(it)
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        onShare = activeVerse?.let { verse ->
-                            {
-                                shareVerse(
-                                    context = context,
-                                    bookName = currentBook?.name,
-                                    chapter = chapter,
-                                    verse = verse,
-                                    abbreviation = currentBible?.abbreviation,
-                                    verses = verses.valueOrNull,
-                                )
-                            }
+                        onShare = {
+                            shareVerse(
+                                context = context,
+                                bookName = currentBook?.name,
+                                book = book,
+                                chapter = chapter,
+                                verse = activeVerse,
+                                abbreviation = currentBible?.abbreviation,
+                                verses = verses.valueOrNull,
+                            )
                         },
                     )
                 },
@@ -507,22 +489,43 @@ private fun installVoiceData(context: Context) {
     }
 }
 
+/**
+ * Shares the live-site link for what is on screen, with the verse text above
+ * it when a verse is selected. The link is what the recipient opens, so it
+ * carries the reading rather than the app's own state.
+ */
 private fun shareVerse(
     context: Context,
     bookName: String?,
+    book: Int,
     chapter: Int,
-    verse: Int,
+    verse: Int?,
     abbreviation: String?,
     verses: List<Verse>?,
 ) {
-    val text = verses?.firstOrNull { it.number == verse }?.text ?: return
-    val reference = listOfNotNull(bookName, "$chapter:$verse").joinToString(" ")
+    val url = verseShareUrl(
+        bookName = bookName,
+        bookNumber = book,
+        chapter = chapter,
+        verse = verse,
+    )
+    val reference = listOfNotNull(
+        bookName,
+        if (verse != null) "$chapter:$verse" else "$chapter",
+    ).joinToString(" ")
     val suffix = abbreviation?.let { " ($it)" }.orEmpty()
+    val text = verse?.let { v -> verses?.firstOrNull { it.number == v }?.text }
+
+    val body = if (text != null) {
+        "$text\n\n— $reference$suffix\n$url"
+    } else {
+        "$reference$suffix\n$url"
+    }
 
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_SUBJECT, reference + suffix)
-        putExtra(Intent.EXTRA_TEXT, "$text\n\n— $reference$suffix")
+        putExtra(Intent.EXTRA_TEXT, body)
     }
-    context.startActivity(Intent.createChooser(intent, "Share verse"))
+    context.startActivity(Intent.createChooser(intent, "Share"))
 }

@@ -16,6 +16,7 @@ import '../widgets/app_sidebar.dart';
 import '../widgets/book_drawer.dart';
 import '../widgets/chapter_reader.dart';
 import '../widgets/read_aloud_fab.dart';
+import '../widgets/settings_drawer.dart';
 import 'bookmarks_page.dart';
 import 'login_page.dart';
 
@@ -195,7 +196,6 @@ class _ReadPageState extends ConsumerState<ReadPage>
     final book = ref.watch(selectedBookProvider);
     final chapter = ref.watch(selectedChapterProvider);
     final activeVerse = ref.watch(activeVerseProvider);
-    final isDark = ref.watch(darkModeProvider);
 
     final chapterKey = (bible: primaryBible, book: book, chapter: chapter);
     final versesAsync = ref.watch(chapterVersesProvider(chapterKey));
@@ -212,14 +212,7 @@ class _ReadPageState extends ConsumerState<ReadPage>
           orElse: () => null,
         );
 
-    final appBar = _buildAppBar(
-      context,
-      isDesktop: isDesktop,
-      bibles: bibles,
-      primaryBible: primaryBible,
-      isDark: isDark,
-      currentBible: currentBible,
-    );
+    final appBar = _buildAppBar(context, isDesktop: isDesktop);
 
     final mainContent = ChapterReader(
       bookName: currentBook?.n ?? '',
@@ -241,9 +234,22 @@ class _ReadPageState extends ConsumerState<ReadPage>
       onOpenPanel: activeVerse != null && !isDesktop ? _openSheet : null,
     );
 
+    final settingsDrawer = SettingsDrawer(
+      bibles: bibles,
+      onSelectBible: (table) {
+        ref.read(primaryBibleProvider.notifier).set(table);
+        ref.read(selectedBookProvider.notifier).set(1);
+        ref.read(selectedChapterProvider.notifier).set(1);
+        _closeSheet();
+      },
+      onReset: _reset,
+    );
+
     if (isDesktop) {
       // ── Desktop: 3-column layout ─────────────────────────────────────────
       return Scaffold(
+        key: _scaffoldKey,
+        endDrawer: settingsDrawer,
         appBar: appBar,
         body: Row(
           children: [
@@ -286,6 +292,7 @@ class _ReadPageState extends ConsumerState<ReadPage>
         errorMessage: booksAsync.error?.toString(),
         onRetry: () => ref.invalidate(booksProvider),
       ),
+      endDrawer: settingsDrawer,
       appBar: appBar,
       body: mainContent,
       floatingActionButton: readAloudFab,
@@ -295,13 +302,14 @@ class _ReadPageState extends ConsumerState<ReadPage>
 
   // ── AppBar ───────────────────────────────────────────────────────────────
 
+  /// The reader's app bar.
+  ///
+  /// Reset, the theme switch, the account icon and the translation chip used
+  /// to sit here; they are in the settings drawer now, so the bar carries the
+  /// book list, bookmarks and the way into that drawer.
   PreferredSizeWidget _buildAppBar(
     BuildContext context, {
     required bool isDesktop,
-    required List<BibleModel> bibles,
-    required String primaryBible,
-    required bool isDark,
-    required BibleModel? currentBible,
   }) {
     final user = ref.watch(authProvider);
     final bookmarksAsync = ref.watch(bookmarksProvider);
@@ -324,21 +332,6 @@ class _ReadPageState extends ConsumerState<ReadPage>
             ),
       title: isDesktop ? null : const Text('Giwu Bible'),
       actions: [
-        // Reset
-        IconButton(
-          icon: const Icon(Icons.refresh_rounded, size: 18),
-          onPressed: _reset,
-          tooltip: 'Reset to Genesis 1 (KJV)',
-        ),
-        // Dark mode
-        IconButton(
-          icon: Icon(
-            isDark ? Icons.wb_sunny_outlined : Icons.dark_mode_outlined,
-            size: 18,
-          ),
-          onPressed: () => ref.read(darkModeProvider.notifier).toggle(),
-          tooltip: isDark ? 'Light mode' : 'Dark mode',
-        ),
         // Bookmarks
         Stack(
           alignment: Alignment.center,
@@ -374,202 +367,20 @@ class _ReadPageState extends ConsumerState<ReadPage>
               ),
           ],
         ),
-        // User / login
+        // Settings — opens the drawer that holds everything else
         IconButton(
           icon: Icon(
-            user != null ? Icons.account_circle : Icons.account_circle_outlined,
+            Icons.settings_outlined,
             size: 18,
             color: user != null ? Theme.of(context).colorScheme.primary : null,
           ),
-          tooltip: user != null ? user.name : 'Sign in',
-          onPressed: () {
-            if (user != null) {
-              _showUserMenu(context, user.name, user.email);
-            } else {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => LoginPage(
-                    onSuccess: () => Navigator.of(context).pop(),
-                  ),
-                ),
-              );
-            }
-          },
+          tooltip: user != null
+              ? 'Settings — signed in as ${user.name}'
+              : 'Settings',
+          onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
         ),
-        // Bible version picker
-        if (bibles.isNotEmpty)
-          _BibleButton(
-            bibles: bibles,
-            primaryBible: primaryBible,
-            abbreviation: currentBible?.abbreviation ?? '…',
-            onChanged: (table) {
-              ref.read(primaryBibleProvider.notifier).set(table);
-              ref.read(selectedBookProvider.notifier).set(1);
-              ref.read(selectedChapterProvider.notifier).set(1);
-              _closeSheet();
-            },
-          ),
         const SizedBox(width: 4),
       ],
-    );
-  }
-
-  void _showUserMenu(BuildContext context, String name, String email) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name,
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(email,
-                      style: const TextStyle(fontSize: 12, color: kMuted)),
-                ],
-              ),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.bookmark_border),
-              title: const Text('Bookmarks'),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                      builder: (_) => const BookmarksPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sign out'),
-              onTap: () async {
-                Navigator.of(ctx).pop();
-                await ref.read(authProvider.notifier).logout();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Bible version picker ───────────────────────────────────────────────────
-
-class _BibleButton extends StatelessWidget {
-  const _BibleButton({
-    required this.bibles,
-    required this.primaryBible,
-    required this.abbreviation,
-    required this.onChanged,
-  });
-
-  final List<BibleModel> bibles;
-  final String primaryBible;
-  final String abbreviation;
-  final void Function(String) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? kDarkBorder2 : kDivider;
-
-    return GestureDetector(
-      onTap: () => _show(context),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          border: Border.all(color: borderColor),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              abbreviation,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(width: 2),
-            const Icon(Icons.keyboard_arrow_down, size: 14, color: kMuted),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _show(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                'Select Bible Version',
-                style: Theme.of(ctx).textTheme.titleMedium,
-              ),
-            ),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: bibles.map((b) {
-                  final isSelected = b.table == primaryBible;
-                  final isDownloaded = b.downloaded;
-                  final cs = Theme.of(ctx).colorScheme;
-                  return ListTile(
-                    dense: true,
-                    enabled: isDownloaded,
-                    leading: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isDownloaded
-                            ? cs.primaryContainer
-                            : cs.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        b.abbreviation,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: isDownloaded ? cs.onPrimaryContainer : kMuted,
-                        ),
-                      ),
-                    ),
-                    title:
-                        Text(b.version, style: const TextStyle(fontSize: 13)),
-                    trailing: isSelected
-                        ? Icon(Icons.check, color: cs.primary, size: 16)
-                        : !isDownloaded
-                            ? const Icon(Icons.download_outlined,
-                                size: 14, color: kMuted)
-                            : null,
-                    selected: isSelected,
-                    onTap: isDownloaded
-                        ? () {
-                            Navigator.of(ctx).pop();
-                            onChanged(b.table);
-                          }
-                        : null,
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -5,16 +5,20 @@ import '../providers/auth_provider.dart';
 import '../theme.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key, this.onSuccess});
+  const LoginPage({super.key, this.onSuccess, this.startInRegister = false});
 
   final VoidCallback? onSuccess;
+
+  /// Opens straight on the Create account form, which is what the settings
+  /// drawer's Sign up row asks for.
+  final bool startInRegister;
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  bool _isLogin = true;
+  late bool _isLogin = !widget.startInRegister;
   bool _submitting = false;
   String? _error;
 

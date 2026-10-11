@@ -8,10 +8,9 @@ import android.content.Intent
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -21,12 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.WbSunny
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DrawerValue
@@ -46,20 +41,22 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -89,6 +86,7 @@ fun ReadScreen(
     onOpenSettings: () -> Unit,
     onOpenBookmarks: () -> Unit,
     onOpenLogin: () -> Unit,
+    onOpenRegister: () -> Unit,
 ) {
     val viewModel: ReaderViewModel = viewModel(
         factory = ReaderViewModel.factory(container, graph),
@@ -123,8 +121,8 @@ fun ReadScreen(
     } == true
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val settingsDrawerState = rememberDrawerState(DrawerValue.Closed)
     var showPanelSheet by remember { mutableStateOf(false) }
-    var showBiblePicker by remember { mutableStateOf(false) }
     var showVoiceData by remember { mutableStateOf(false) }
 
     // The engine may have gained voice data while the reader was away.
@@ -148,17 +146,11 @@ fun ReadScreen(
                 topBar = {
                     ReaderTopBar(
                         isWide = isWide,
-                        darkMode = darkMode,
                         bookmarkCount = bookmarks.valueOrNull?.size ?: 0,
                         isSignedIn = user != null,
-                        abbreviation = currentBible?.abbreviation,
-                        hasBibles = bibles.isNotEmpty(),
                         onOpenDrawer = { scope.launch { drawerState.open() } },
-                        onReset = viewModel::reset,
-                        onToggleDarkMode = prefs::toggleDarkMode,
                         onOpenBookmarks = onOpenBookmarks,
-                        onOpenSettings = onOpenSettings,
-                        onOpenBiblePicker = { showBiblePicker = true },
+                        onOpenSettings = { scope.launch { settingsDrawerState.open() } },
                     )
                 },
                 bottomBar = {
@@ -267,7 +259,6 @@ fun ReadScreen(
                             loadComparison = { table ->
                                 viewModel.comparison(table, book, chapter, activeVerse ?: 1)
                             },
-                            onOpenSettings = onOpenSettings,
                             modifier = Modifier
                                 .width(PanelWidth)
                                 .fillMaxHeight(),
@@ -279,25 +270,97 @@ fun ReadScreen(
             }
         }
 
-        if (isWide) {
-            body()
-        } else {
+        val readerLayout: @Composable () -> Unit = {
+            if (isWide) {
+                body()
+            } else {
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    drawerContent = {
+                        ModalDrawerSheet {
+                            BookListPanel(
+                                books = books,
+                                selectedBook = book,
+                                onSelectBook = viewModel::selectBook,
+                                onRetry = viewModel::loadBooks,
+                                onClose = { scope.launch { drawerState.close() } },
+                                afterSelect = { scope.launch { drawerState.close() } },
+                            )
+                        }
+                    },
+                    content = body,
+                )
+            }
+        }
+
+        // Material's modal drawer always hangs off the start edge, so the
+        // settings drawer is laid out in the opposite direction and
+        // everything inside it flipped back — the usual way to reach the end
+        // edge. Mirroring the reader's own direction rather than hard-coding
+        // Rtl keeps the drawer on the end edge in an RTL locale too.
+        val closeSettings = { scope.launch { settingsDrawerState.close() }; Unit }
+        val readingDirection = LocalLayoutDirection.current
+        val drawerDirection = when (readingDirection) {
+            LayoutDirection.Ltr -> LayoutDirection.Rtl
+            LayoutDirection.Rtl -> LayoutDirection.Ltr
+        }
+        CompositionLocalProvider(LocalLayoutDirection provides drawerDirection) {
             ModalNavigationDrawer(
-                drawerState = drawerState,
+                drawerState = settingsDrawerState,
+                // Without this a drag anywhere in the chapter would pull the
+                // drawer open, including the swipe that opens the book list.
+                gesturesEnabled = settingsDrawerState.isOpen,
                 drawerContent = {
+                    // The sheet itself stays right-to-left so Material rounds
+                    // the edge facing the chapter; only its contents flip back.
                     ModalDrawerSheet {
-                        BookListPanel(
-                            books = books,
-                            selectedBook = book,
-                            onSelectBook = viewModel::selectBook,
-                            onRetry = viewModel::loadBooks,
-                            onClose = { scope.launch { drawerState.close() } },
-                            afterSelect = { scope.launch { drawerState.close() } },
-                        )
+                        CompositionLocalProvider(
+                            LocalLayoutDirection provides readingDirection,
+                        ) {
+                            SettingsDrawerSheet(
+                                bibles = bibles,
+                                primaryBible = primaryBible,
+                                darkMode = darkMode,
+                                user = user,
+                                onToggleDarkMode = prefs::toggleDarkMode,
+                                onSelectBible = { table ->
+                                    closeSettings()
+                                    viewModel.selectBible(table)
+                                },
+                                onReset = {
+                                    closeSettings()
+                                    viewModel.reset()
+                                },
+                                onOpenLogin = {
+                                    closeSettings()
+                                    onOpenLogin()
+                                },
+                                onOpenRegister = {
+                                    closeSettings()
+                                    onOpenRegister()
+                                },
+                                onSignOut = {
+                                    closeSettings()
+                                    scope.launch { graph.auth.logout() }
+                                },
+                                onOpenBookmarks = {
+                                    closeSettings()
+                                    onOpenBookmarks()
+                                },
+                                onOpenAllSettings = {
+                                    closeSettings()
+                                    onOpenSettings()
+                                },
+                                onClose = closeSettings,
+                            )
+                        }
                     }
                 },
-                content = body,
-            )
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides readingDirection) {
+                    readerLayout()
+                }
+            }
         }
     }
 
@@ -319,7 +382,6 @@ fun ReadScreen(
                 loadComparison = { table ->
                     viewModel.comparison(table, book, chapter, activeVerse ?: 1)
                 },
-                onOpenSettings = onOpenSettings,
                 onClose = {
                     showPanelSheet = false
                     viewModel.clearVerse()
@@ -327,18 +389,6 @@ fun ReadScreen(
                 modifier = Modifier.fillMaxHeight(0.6f),
             )
         }
-    }
-
-    if (showBiblePicker) {
-        BiblePickerSheet(
-            bibles = bibles,
-            primaryBible = primaryBible,
-            onDismiss = { showBiblePicker = false },
-            onSelect = { table ->
-                showBiblePicker = false
-                viewModel.selectBible(table)
-            },
-        )
     }
 
     if (showVoiceData) {
@@ -352,28 +402,28 @@ fun ReadScreen(
     }
 }
 
+/**
+ * The reader's top bar.
+ *
+ * Reset, the theme switch and the translation chip used to sit here; they are
+ * in the settings drawer now, so the bar carries the book list, bookmarks and
+ * the way into that drawer.
+ */
 @Composable
 private fun ReaderTopBar(
     isWide: Boolean,
-    darkMode: Boolean,
     bookmarkCount: Int,
     isSignedIn: Boolean,
-    abbreviation: String?,
-    hasBibles: Boolean,
     onOpenDrawer: () -> Unit,
-    onReset: () -> Unit,
-    onToggleDarkMode: () -> Unit,
     onOpenBookmarks: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenBiblePicker: () -> Unit,
 ) {
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
         title = {
-            // One line only: the bar also carries four actions and the
-            // translation chip, and a wrapped title squeezes them.
+            // One line only: a wrapped title squeezes the actions beside it.
             if (!isWide) {
                 Text(
                     text = "Giwu Bible",
@@ -404,24 +454,6 @@ private fun ReaderTopBar(
             }
         },
         actions = {
-            IconButton(onClick = onReset, modifier = Modifier.size(ActionSize)) {
-                Icon(
-                    imageVector = Icons.Rounded.Refresh,
-                    contentDescription = "Back to Genesis 1",
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            IconButton(onClick = onToggleDarkMode, modifier = Modifier.size(ActionSize)) {
-                Icon(
-                    imageVector = if (darkMode) {
-                        Icons.Outlined.WbSunny
-                    } else {
-                        Icons.Outlined.DarkMode
-                    },
-                    contentDescription = if (darkMode) "Light mode" else "Dark mode",
-                    modifier = Modifier.size(18.dp),
-                )
-            }
             IconButton(onClick = onOpenBookmarks, modifier = Modifier.size(ActionSize)) {
                 BadgedBox(
                     badge = {
@@ -449,35 +481,14 @@ private fun ReaderTopBar(
                     modifier = Modifier.size(18.dp),
                 )
             }
-            if (hasBibles) {
-                Row(
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .border(1.dp, MaterialTheme.giwu.borderStrong, RoundedCornerShape(6.dp))
-                        .clickable(onClick = onOpenBiblePicker)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = abbreviation ?: "…",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    Icon(
-                        imageVector = Icons.Rounded.KeyboardArrowDown,
-                        contentDescription = "Change translation",
-                        tint = MaterialTheme.giwu.muted,
-                        modifier = Modifier.size(14.dp),
-                    )
-                }
-            }
+            Spacer(Modifier.width(4.dp))
         },
     )
 }
 
 /**
- * Compact action buttons: the bar carries four of them plus the translation
- * chip, and at the default 48dp the title has no room left on a phone.
+ * Compact action buttons: at the default 48dp the title has no room left on a
+ * narrow phone.
  */
 private val ActionSize = 38.dp
 

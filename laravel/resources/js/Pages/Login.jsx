@@ -1,8 +1,16 @@
 import { useState } from 'react'
 import { Head, Link, useForm } from '@inertiajs/react'
 
+// ?mode=register lands straight on the sign-up tab, which is what the
+// settings drawer's "Sign up" link asks for.
+function initialMode() {
+  if (typeof window === 'undefined') return 'login'
+  const mode = new URLSearchParams(window.location.search).get('mode')
+  return mode === 'register' ? 'register' : 'login'
+}
+
 export default function Login() {
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState(initialMode)
   const form = useForm({ name: '', email: '', password: '', password_confirmation: '' })
   const { data, setData, processing, errors, reset, clearErrors } = form
 

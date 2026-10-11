@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -65,7 +64,6 @@ fun ComparisonPanel(
     selectedTables: List<String>,
     onToggleTable: (String, List<String>) -> Unit,
     loadComparison: suspend (String) -> ComparisonResult?,
-    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     onClose: (() -> Unit)? = null,
 ) {
@@ -100,14 +98,6 @@ fun ComparisonPanel(
                     selected = tab == 1,
                     onClick = { tab = 1 },
                     text = { Text("PARALLEL BIBLES", style = MaterialTheme.typography.labelSmall) },
-                )
-            }
-            IconButton(onClick = onOpenSettings) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = "Settings",
-                    tint = MaterialTheme.giwu.muted,
-                    modifier = Modifier.size(16.dp),
                 )
             }
             if (onClose != null) {

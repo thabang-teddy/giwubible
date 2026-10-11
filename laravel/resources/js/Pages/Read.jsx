@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Head } from '@inertiajs/react'
 import Navbar from '../Components/Navbar'
+import SettingsDrawer from '../Components/SettingsDrawer'
 import Sidebar from '../Components/Sidebar'
 import MainColumn from '../Components/MainColumn'
 import VersePanel from '../Components/VersePanel'
@@ -41,6 +42,7 @@ export default function Read({ bibles = [], books = [] }) {
   })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(() => !!params.get('verse'))
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => { localStorage.setItem('giwu_bible', JSON.stringify(primaryBible)) }, [primaryBible])
   useEffect(() => { localStorage.setItem('giwu_book', JSON.stringify(book)) }, [book])
@@ -88,12 +90,18 @@ export default function Read({ bibles = [], books = [] }) {
     <div className="app">
       <Head title={currentBook ? `${currentBook.n} ${chapter}` : 'Read'} />
       <Navbar
+        onMenuOpen={() => setSidebarOpen(true)}
+        onSettingsOpen={() => setSettingsOpen(true)}
+        bookmarkCount={bookmarks.length}
+      />
+
+      <SettingsDrawer
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
         bibles={bibles}
         primaryBible={primaryBible}
         onPrimaryBibleChange={handlePrimaryBibleChange}
         onReset={handleReset}
-        onMenuOpen={() => setSidebarOpen(true)}
-        bookmarkCount={bookmarks.length}
       />
 
       <div

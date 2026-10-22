@@ -54,10 +54,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     auth: AuthStore,
+    startInRegister: Boolean = false,
     onBack: () -> Unit,
     onSignedIn: () -> Unit,
 ) {
-    var isRegister by remember { mutableStateOf(false) }
+    var isRegister by remember { mutableStateOf(startInRegister) }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }

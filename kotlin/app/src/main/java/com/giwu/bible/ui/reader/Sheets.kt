@@ -21,16 +21,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Logout
-import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.RecordVoiceOver
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -42,8 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.giwu.bible.model.Bible
-import com.giwu.bible.ui.common.VersionBadge
 import com.giwu.bible.ui.theme.giwu
 
 /** Chapter numbers as a grid, so Psalm 119 is one tap away. */
@@ -94,105 +86,6 @@ fun ChapterPickerSheet(
                 }
             }
         }
-    }
-}
-
-/**
- * The translation picker.
- *
- * Translations that are not downloaded are listed but not selectable — seeing
- * what else exists is the point, and the Settings screen is where they are
- * fetched.
- */
-@Composable
-fun BiblePickerSheet(
-    bibles: List<Bible>,
-    primaryBible: String,
-    onDismiss: () -> Unit,
-    onSelect: (String) -> Unit,
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        SheetTitle("Select Bible Version")
-        Column(modifier = Modifier.padding(bottom = 16.dp)) {
-            bibles.forEach { bible ->
-                val isSelected = bible.table == primaryBible
-                ListItem(
-                    leadingContent = {
-                        VersionBadge(
-                            abbreviation = bible.abbreviation,
-                            enabled = bible.downloaded,
-                        )
-                    },
-                    headlineContent = {
-                        Text(
-                            text = bible.version,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (bible.downloaded) {
-                                MaterialTheme.colorScheme.onSurface
-                            } else {
-                                MaterialTheme.giwu.muted
-                            },
-                        )
-                    },
-                    trailingContent = {
-                        when {
-                            isSelected -> Icon(
-                                imageVector = Icons.Rounded.Check,
-                                contentDescription = "Current translation",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp),
-                            )
-
-                            !bible.downloaded -> Icon(
-                                imageVector = Icons.Outlined.Download,
-                                contentDescription = "Not downloaded",
-                                tint = MaterialTheme.giwu.muted,
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                    },
-                    modifier = Modifier.clickable(enabled = bible.downloaded) {
-                        onSelect(bible.table)
-                    },
-                )
-            }
-        }
-    }
-}
-
-/** Who is signed in, with the two things they can do about it. */
-@Composable
-fun AccountSheet(
-    name: String,
-    email: String,
-    onDismiss: () -> Unit,
-    onOpenBookmarks: () -> Unit,
-    onSignOut: () -> Unit,
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) {
-            Text(text = name, style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = email,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.giwu.muted,
-            )
-        }
-        HorizontalDivider()
-        ListItem(
-            leadingContent = { Icon(Icons.Outlined.BookmarkBorder, contentDescription = null) },
-            headlineContent = { Text("Bookmarks") },
-            modifier = Modifier.clickable(onClick = onOpenBookmarks),
-        )
-        ListItem(
-            leadingContent = {
-                Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null)
-            },
-            headlineContent = { Text("Sign out") },
-            modifier = Modifier.clickable(onClick = onSignOut),
-        )
-        Spacer(Modifier.height(12.dp))
     }
 }
 

@@ -22,9 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.giwu.bible.ui.auth.LoginScreen
 import com.giwu.bible.ui.bookmarks.BookmarksScreen
 import com.giwu.bible.ui.reader.ReadScreen
@@ -57,6 +59,9 @@ object Routes {
     const val SETTINGS = "settings"
     const val LOGIN = "login"
     const val BOOKMARKS = "bookmarks"
+
+    /** The same screen, opened on its Create account tab. */
+    const val REGISTER = "login?register=true"
 }
 
 @Composable
@@ -116,6 +121,7 @@ private fun GiwuNavHost(container: AppContainer, graph: AppGraph) {
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenBookmarks = { navController.navigate(Routes.BOOKMARKS) },
                 onOpenLogin = { navController.navigate(Routes.LOGIN) },
+                onOpenRegister = { navController.navigate(Routes.REGISTER) },
             )
         }
         composable(Routes.SETTINGS) {
@@ -124,11 +130,22 @@ private fun GiwuNavHost(container: AppContainer, graph: AppGraph) {
                 graph = graph,
                 onBack = { navController.popBackStack() },
                 onManageTranslations = { navController.navigate(Routes.WELCOME) },
+                onOpenBookmarks = { navController.navigate(Routes.BOOKMARKS) },
+                onOpenLogin = { navController.navigate(Routes.LOGIN) },
             )
         }
-        composable(Routes.LOGIN) {
+        composable(
+            route = "${Routes.LOGIN}?register={register}",
+            arguments = listOf(
+                navArgument("register") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                },
+            ),
+        ) { entry ->
             LoginScreen(
                 auth = graph.auth,
+                startInRegister = entry.arguments?.getBoolean("register") == true,
                 onBack = { navController.popBackStack() },
                 onSignedIn = { navController.popBackStack() },
             )

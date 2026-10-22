@@ -37,8 +37,8 @@ laravel/             # Single Laravel app: Inertia/React web + JSON API
     js/
       app.jsx        # createInertiaApp entry
       Pages/         # Home, Read, Login, Bookmarks, Profile, Download (Inertia pages)
-      Components/    # Navbar, Sidebar, MainColumn, VersePanel, BottomBar, ChapterNav
-      hooks/         # useAuth, useBookmarks (Inertia) + useChapter, useAllVerseComparisons (XHR)
+      Components/    # Navbar, Sidebar, SettingsDrawer, MainColumn, VersePanel, BottomBar, ChapterNav
+      hooks/         # useAuth, useBookmarks, useDarkMode (Inertia) + useChapter, useAllVerseComparisons (XHR)
       api/           # axios client + chapter/verse wrappers (in-page reader XHR)
     css/app.css      # ported stylesheet
     views/app.blade.php   # Inertia root view
@@ -172,7 +172,7 @@ flutter build windows         # Release build (CI wraps it in an Inno installer)
 | HTTP client                       | **Dio** (mirrors Axios usage in JS frontend)                          |
 | Local persistence                 | **shared_preferences** — saves primaryBible, comparisonBible, book, chapter |
 | Verse comparison UX               | Draggable **bottom sheet** appears on verse tap (one version at a time) |
-| Navigation                        | Single `ReadPage` screen; bible/book/chapter picked from drawer/sheet |
+| Navigation                        | Single `ReadPage` screen; books in the left drawer on a narrow window, settings in the right one |
 | API base URL                      | `https://api.giwu.test/`                                               |
 
 ### Kotlin-specific decisions
@@ -180,7 +180,7 @@ flutter build windows         # Release build (CI wraps it in an Inno installer)
 | Decision                          | Value                                                                 |
 |-----------------------------------|-----------------------------------------------------------------------|
 | Target platform                   | Android only, minSdk 21 / targetSdk 36                                |
-| UI                                | **Jetpack Compose** + Material 3; drawer on a phone, three columns at 768dp |
+| UI                                | **Jetpack Compose** + Material 3; books drawer left, settings drawer right, three columns at 768dp |
 | State management                  | `StateFlow` + `ViewModel`, hand-rolled DI in `AppContainer`           |
 | HTTP client                       | **OkHttp** + kotlinx.serialization (tolerant readers for the API's shapes) |
 | Local persistence                 | `SQLiteOpenHelper` (verses), SharedPreferences (same keys as Flutter), `EncryptedSharedPreferences` (token) |

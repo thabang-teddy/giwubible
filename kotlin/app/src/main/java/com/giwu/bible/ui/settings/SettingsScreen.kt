@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DeleteForever
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.outlined.FormatListNumbered
 import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -93,6 +95,7 @@ fun SettingsScreen(
     val rate by prefs.speechRate.collectAsStateWithLifecycle()
     val announceNumbers by prefs.announceVerseNumbers.collectAsStateWithLifecycle()
     val continueToNext by prefs.continueToNextChapter.collectAsStateWithLifecycle()
+    val automaticUpdates by prefs.automaticUpdateChecks.collectAsStateWithLifecycle()
     val serverUrl by graph.serverSettings.url.collectAsStateWithLifecycle()
     val user by graph.auth.user.collectAsStateWithLifecycle()
 
@@ -347,6 +350,47 @@ fun SettingsScreen(
                     )
                 },
                 modifier = Modifier.clickable(onClick = onManageTranslations),
+            )
+            HorizontalDivider(color = MaterialTheme.giwu.divider)
+
+            // The app is sideloaded, so nothing else is going to tell the
+            // reader a newer build exists.
+            SectionHeader("ABOUT")
+            ListItem(
+                leadingContent = {
+                    Icon(Icons.Outlined.SystemUpdate, contentDescription = null)
+                },
+                headlineContent = { Text("App version") },
+                supportingContent = {
+                    Text(
+                        text = container.updates.installed.display,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                },
+                trailingContent = {
+                    TextButton(onClick = { container.updates.checkNow() }) { Text("Check") }
+                },
+            )
+            ListItem(
+                leadingContent = {
+                    Icon(Icons.Outlined.Autorenew, contentDescription = null)
+                },
+                headlineContent = { Text("Check for updates automatically") },
+                supportingContent = {
+                    Text(
+                        text = "Once a day, when you open the app",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = automaticUpdates,
+                        onCheckedChange = { prefs.setAutomaticUpdateChecks(it) },
+                    )
+                },
+                modifier = Modifier.clickable {
+                    prefs.setAutomaticUpdateChecks(!automaticUpdates)
+                },
             )
             HorizontalDivider(color = MaterialTheme.giwu.divider)
 

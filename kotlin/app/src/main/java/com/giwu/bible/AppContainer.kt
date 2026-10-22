@@ -14,6 +14,10 @@ import com.giwu.bible.repo.ServerSettings
 import com.giwu.bible.tts.AndroidTtsEngine
 import com.giwu.bible.tts.TtsController
 import com.giwu.bible.tts.TtsEngine
+import com.giwu.bible.update.AndroidApkInstaller
+import com.giwu.bible.update.AppUpdates
+import com.giwu.bible.update.GithubReleaseSource
+import com.giwu.bible.update.InstalledVersion
 import com.giwu.bible.util.launchCollect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -41,6 +45,20 @@ class AppContainer(context: Context, private val appScope: CoroutineScope) {
     private val tokens = TokenStore.create(appContext)
 
     val repository: BibleRepository = BibleRepository(database, bibleApi)
+
+    /**
+     * Checked once a day on launch, and on demand from Settings.
+     *
+     * Lives on the container rather than inside a screen so one check serves
+     * the whole process however the reader got there.
+     */
+    val updates: AppUpdates = AppUpdates(
+        source = GithubReleaseSource(client),
+        installer = AndroidApkInstaller(appContext),
+        prefs = prefs,
+        installed = InstalledVersion.of(appContext),
+        scope = appScope,
+    )
 
     val ttsEngine: TtsEngine = AndroidTtsEngine(appContext)
     val tts: TtsController = TtsController(

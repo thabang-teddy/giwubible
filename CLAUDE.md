@@ -63,6 +63,7 @@ kotlin/              # Native Android app, Android Studio project root (consumes
     data/            # BibleDatabase (SQLiteOpenHelper), AppPrefs, remote/ (OkHttp)
     repo/            # BibleRepository, AuthStore, BookmarkStore, ServerSettings
     tts/             # TtsEngine + AndroidTtsEngine + TtsController
+    update/          # Daily GitHub release check, APK download and install
     ui/              # reader/, welcome/, settings/, auth/, bookmarks/, theme/
   app/src/test/      # JVM unit tests (no device needed)
 ```
@@ -186,6 +187,7 @@ flutter build windows         # Release build (CI wraps it in an Inno installer)
 | Local persistence                 | `SQLiteOpenHelper` (verses), SharedPreferences (same keys as Flutter), `EncryptedSharedPreferences` (token) |
 | Read aloud                        | Android's own `TextToSpeech` — no downloaded voice model              |
 | API base URL                      | `https://giwu.co.za/api/`, overridable in Settings                    |
+| In-app updates                    | Reads GitHub Releases directly (not `/api`), once a day on launch, installs the APK via `DownloadManager` + `FileProvider` |
 
 ---
 

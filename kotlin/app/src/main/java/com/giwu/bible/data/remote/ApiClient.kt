@@ -84,6 +84,26 @@ class ApiClient(
         }
 
     /**
+     * Fetches an absolute URL that is not part of the Giwu API.
+     *
+     * Kept apart from [get] deliberately: the base URL does not apply, and
+     * neither does the bearer token, which must never travel to another host.
+     * Used by the update check, which reads GitHub directly.
+     */
+    suspend fun getExternal(
+        url: String,
+        headers: Map<String, String> = emptyMap(),
+    ): JsonElement = withContext(io) {
+        val target = url.toHttpUrlOrNull()
+            ?: throw ApiException(0, "Not a valid address: $url")
+        val builder = Request.Builder().url(target).header("Accept", "application/json")
+        for ((name, value) in headers) builder.header(name, value)
+        client.newCall(builder.build()).execute().use { response ->
+            json.parseToJsonElement(response.requireBody())
+        }
+    }
+
+    /**
      * Streams a response body straight into [read] instead of buffering it as
      * a string first, which keeps a whole-translation download out of a second
      * multi-megabyte copy.

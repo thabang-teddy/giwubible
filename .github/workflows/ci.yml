@@ -43,6 +43,45 @@ env:
   NODE_VERSION: '20'
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # The guard.
+  #
+  # deploy/staging and deploy/production are ARTEFACTS, force-pushed by the
+  # cpanel job below. Its publish step runs
+  # `rm -rf flutter documents laravel/tests`, so a pull request opened FROM one
+  # of them cannot pass: php dies on a missing tests/Unit, flutter dies on a
+  # missing working directory. Two reds that look like broken code and are not.
+  #
+  # Merging such a pull request is the real hazard. It would delete flutter/,
+  # documents/ and laravel/tests/ from the target branch and commit the whole
+  # of vendor/ and public/build into source history.
+  #
+  # So this says why, in one place, instead of leaving the reader to infer it
+  # from two unrelated-looking failures. It deliberately does NOT gate the
+  # other jobs with `needs`: a skipped check can count as a passing one, and an
+  # artefact branch must never look mergeable.
+  # ---------------------------------------------------------------------------
+  guard:
+    name: Guard — reject artefact-branch pull requests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # github.head_ref is empty on a push, so this step is skipped there and
+      # the job passes in a few seconds. It only ever speaks on a pull request.
+      - name: Refuse a pull request opened from a deploy branch
+        if: startsWith(github.head_ref, 'deploy/')
+        run: |
+          echo "::error::${{ github.head_ref }} is a deploy artefact branch, not a source branch."
+          echo "It is force-pushed on every build, and the cpanel job deletes"
+          echo "flutter/, documents/ and laravel/tests/ before pushing it."
+          echo "Merging it into ${{ github.base_ref }} would delete those from source"
+          echo "and commit vendor/ and public/build into history."
+          echo
+          echo "Close this pull request. To deploy, push to staging or master and let"
+          echo "the cpanel job publish the artefact; the server pulls it from there."
+          exit 1
+
   php:
     name: PHP — lint, test, and the release caches
     runs-on: ubuntu-latest
@@ -381,10 +420,11 @@ jobs:
   # Windows build. Both carry the version from pubspec.yaml, which stays the
   # single source for the tag even though only the desktop app is Flutter now.
   #
-  # NOTE: the release build is still signed with the DEBUG key (see
-  # kotlin/app/build.gradle.kts). Fine for sideloading staging builds; set up a
-  # real upload keystore before publishing anywhere else. The Windows installer
-  # is unsigned, so SmartScreen will warn on first run.
+  # The APK is signed with the release keystore held in ANDROID_KEYSTORE_BASE64
+  # and its three companion secrets; the build refuses to fall back to debug
+  # keys here (-PgiwuRequireSigning=true), because the app updates itself from
+  # these releases and Android rejects an update signed with another key. The
+  # Windows installer is unsigned, so SmartScreen will warn on first run.
   # ---------------------------------------------------------------------------
   release:
     name: Tag and publish the Android APK and Windows installer
@@ -419,13 +459,63 @@ jobs:
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "TAG=v${VERSION}-staging.${{ github.run_number }}" >> "$GITHUB_ENV"
 
+      # THE SIGNING KEY. Every APK published here has to be signed with the
+      # same one, or none of them can replace another: Android refuses an
+      # update whose signature differs, and the app updates ITSELF from these
+      # releases (kotlin/update/). A per-run debug keystore — what this job
+      # used to fall back to — breaks that for every reader.
+      #
+      # ANDROID_KEYSTORE_BASE64 is the .jks, base64-encoded. kotlin/README.md
+      # has the commands that produce it and the three secrets beside it.
+      # Losing this key means no future build can update an installed app, so
+      # it is backed up off GitHub as well.
+      - name: Write the release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set."
+            echo "Publishing a release signed with a throwaway debug key would"
+            echo "produce an APK that cannot update, and cannot be updated by,"
+            echo "any other build. See kotlin/README.md to create the keystore."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "${RUNNER_TEMP}/giwu-release.jks"
+
       - name: Build the APK
         working-directory: kotlin
+        env:
+          GIWU_KEYSTORE_FILE: ${{ runner.temp }}/giwu-release.jks
+          GIWU_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          GIWU_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          GIWU_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           ./gradlew :app:assembleRelease \
             "-PgiwuVersionName=${VERSION}" \
-            "-PgiwuVersionCode=${{ github.run_number }}"
+            "-PgiwuVersionCode=${{ github.run_number }}" \
+            -PgiwuRequireSigning=true
           cp app/build/outputs/apk/release/app-release.apk "giwubible-${TAG}.apk"
+
+      # The belt to the build script's braces. -PgiwuRequireSigning=true makes
+      # Gradle refuse to fall back to debug keys, and this proves it did:
+      # keytool reads the certificate out of the finished APK, and a debug one
+      # always carries CN=Android Debug.
+      - name: Check the APK is not debug-signed
+        working-directory: kotlin
+        run: |
+          keytool -printcert -jarfile "giwubible-${TAG}.apk" > certificate.txt
+          if grep -q "CN=Android Debug" certificate.txt; then
+            echo "::error::The APK is signed with a debug key and must not be published."
+            cat certificate.txt
+            exit 1
+          fi
+          SHA256=$(grep -m1 "SHA256:" certificate.txt | sed -E 's/.*SHA256:[[:space:]]*//')
+          echo "SIGNING_SHA256=${SHA256}" >> "$GITHUB_ENV"
+
+      # Whatever happens above, the key does not outlive the job.
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/giwu-release.jks"
 
       - uses: actions/download-artifact@v4
         with:
@@ -451,4 +541,9 @@ jobs:
             echo
             echo "- Tag: \`${TAG}\` @ \`${{ github.sha }}\`"
             echo "- Download: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${TAG}"
+            echo "- APK signing key: \`${SIGNING_SHA256}\`"
+            echo
+            echo "That fingerprint must be identical on every release. The app"
+            echo "updates itself from these downloads, and Android rejects an"
+            echo "update signed with a different key."
           } >> "$GITHUB_STEP_SUMMARY"

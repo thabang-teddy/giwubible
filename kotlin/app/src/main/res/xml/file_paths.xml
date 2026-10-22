@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The one directory this app shares with another: the downloaded update APK,
+  handed to the system package installer. DownloadManager is told to write to
+  getExternalFilesDir(DIRECTORY_DOWNLOADS), which is this path.
+-->
+<paths>
+    <external-files-path
+        name="updates"
+        path="Download/" />
+</paths>

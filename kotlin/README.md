@@ -33,21 +33,64 @@ Open this folder (`kotlin/`) directly in Android Studio.
 `local.properties` needs `sdk.dir` pointing at the Android SDK (Android Studio
 writes this automatically).
 
-**Signing — read this before handing anyone a build.** The release build is
-signed with the local debug keystore, matching the Flutter build's
-`signingConfig`. Since this app ships under the same `com.giwu.bible` identity
-the Flutter one did, Android treats a new APK as an *update* to whatever is
-installed — and refuses it outright when the signing key differs
-(`INSTALL_FAILED_UPDATE_INCOMPATIBLE`). A debug keystore is per machine, and CI
-runners generate a fresh one per run, so today that means:
+## Signing
 
-- an existing Flutter-built install has to be uninstalled before this one goes
-  on, losing its downloaded translations;
-- consecutive CI releases will not update each other either.
+Android treats a new APK as an *update* to whatever is installed under the
+same application ID, and refuses it outright when the signing key differs
+(`INSTALL_FAILED_UPDATE_INCOMPATIBLE`, shown to the reader as "App not
+installed"). Since the app also updates itself from GitHub Releases, **every
+published APK has to carry the same key** — a debug keystore cannot do this,
+because it is per machine and a CI runner makes a fresh one each run.
 
-Setting up one real release keystore in
-[`app/build.gradle.kts`](app/build.gradle.kts) — signed from a CI secret —
-fixes all of it, and is required for Play regardless.
+So the release build reads its keystore from four environment variables, never
+from the repository and never from `gradle.properties`:
+
+| Variable | Holds |
+|---|---|
+| `GIWU_KEYSTORE_FILE` | Path to the `.jks` |
+| `GIWU_KEYSTORE_PASSWORD` | Keystore password |
+| `GIWU_KEY_ALIAS` | Key alias inside it |
+| `GIWU_KEY_PASSWORD` | Key password |
+
+With all four set and the file present, `assembleRelease` signs with that key.
+With any of them missing it falls back to debug keys, so you can still build a
+release locally — *unless* you pass `-PgiwuRequireSigning=true`, which turns
+the fallback into a build failure. CI always passes it.
+
+### Creating the keystore, once
+
+```bash
+keytool -genkeypair -v -keystore giwu-release.jks -alias giwu -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Then base64 it for GitHub:
+
+```bash
+base64 -w0 giwu-release.jks > giwu-release.jks.base64
+```
+
+Add four repository secrets under **Settings → Secrets and variables →
+Actions**: `ANDROID_KEYSTORE_BASE64` (the contents of that file),
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`.
+
+> **Keep a backup of `giwu-release.jks` somewhere other than GitHub.** Lose it
+> and no future build can ever update an installed app — every reader has to
+> uninstall and lose their downloaded translations. The 10000-day validity is
+> deliberate for the same reason: an expired key has the same effect.
+
+The first release signed this way cannot update an app installed from an
+*earlier* debug-signed APK, including anything built from the Flutter project.
+Those installs need removing by hand once; everything after that updates in
+place.
+
+### What CI does
+
+The `release` job writes the keystore from `ANDROID_KEYSTORE_BASE64`, builds
+with `-PgiwuRequireSigning=true`, then reads the certificate back out of the
+finished APK with `keytool` and fails if it carries `CN=Android Debug`. The
+key is deleted from the runner whether or not the build succeeded, and the
+job summary prints the SHA-256 fingerprint — it must read the same on every
+release.
 
 A built APK is kept out of git (`*.apk` in `.gitignore`); `dist/` is where this
 project's exported builds land.
@@ -62,6 +105,40 @@ APK, the git tag and the Windows installer — through
 ```bash
 ./gradlew :app:assembleRelease -PgiwuVersionName=1.0.0 -PgiwuVersionCode=42
 ```
+
+## In-app updates
+
+The app is sideloaded, so no store will tell a reader that a newer build
+exists. [`update/`](app/src/main/java/com/giwu/bible/update) does it instead:
+
+- **When.** `MainActivity` calls `AppUpdates.checkOnLaunch()` on every launch,
+  and the updater drops the check unless a day has passed since the last one
+  that reached GitHub — so "daily" needs no scheduled job, no notification
+  channel and no wakeup for someone who is not reading. Settings → ABOUT →
+  *Check* forces one, and a switch there turns the automatic check off.
+- **Where from.** `GithubReleaseSource` reads
+  `api.github.com/repos/thabang-teddy/giwubible/releases` directly, not through
+  the Giwu API, so the check still works when the reader has pointed the app at
+  another server. `/releases` rather than `/releases/latest`, because CI
+  publishes every build as a *pre-release* and `latest` skips those. The newest
+  release carrying an `.apk` asset wins.
+- **What counts as newer.** `ReleaseVersion` parses the CI tag
+  `v<version>-<channel>.<run number>` and compares it with the installed
+  `versionName` / `versionCode`. The core version decides first; only when the
+  cores match does the run number — which *is* the `versionCode` CI stamps —
+  break the tie.
+- **Installing.** `AndroidApkInstaller` hands the download to the system
+  `DownloadManager` (so it survives leaving the app), writes it to this app's
+  external files directory, then opens the package installer through the
+  `FileProvider` declared in the manifest. The reader has to allow *install
+  unknown apps* once; the prompt walks them to that screen and back.
+- **Declining.** *Skip this version* stores the tag, and the daily check stays
+  quiet about it. An explicit *Check* still reports it.
+
+This only works while every release carries the same signing key — see
+[Signing](#signing). The first update onto a device still holding an older
+debug-signed build will fail with "App not installed"; that one install has to
+be removed by hand.
 
 ## How it maps to the Flutter app
 

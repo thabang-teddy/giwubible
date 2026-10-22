@@ -3,6 +3,7 @@ package com.giwu.bible.data
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.giwu.bible.update.UpdatePreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * the reader comes back exactly where it left off. Keys match the Flutter
  * build's so the two apps stay easy to compare.
  */
-class AppPrefs(private val prefs: SharedPreferences) {
+class AppPrefs(private val prefs: SharedPreferences) : UpdatePreferences {
 
     // ── Appearance ─────────────────────────────────────────────────────────
 
@@ -100,6 +101,30 @@ class AppPrefs(private val prefs: SharedPreferences) {
         prefs.edit { putBoolean(KEY_CONTINUE, value) }
     }
 
+    // ── Updates ────────────────────────────────────────────────────────────
+
+    private val _automaticUpdateChecks =
+        MutableStateFlow(prefs.getBoolean(KEY_UPDATE_AUTO, true))
+    override val automaticUpdateChecks: StateFlow<Boolean> =
+        _automaticUpdateChecks.asStateFlow()
+
+    fun setAutomaticUpdateChecks(value: Boolean) {
+        _automaticUpdateChecks.value = value
+        prefs.edit { putBoolean(KEY_UPDATE_AUTO, value) }
+    }
+
+    /**
+     * Read and written straight through rather than kept as a flow: nothing
+     * on screen reacts to either, and the updater reads them once per launch.
+     */
+    override var lastUpdateCheck: Long
+        get() = prefs.getLong(KEY_UPDATE_CHECKED, 0L)
+        set(value) = prefs.edit { putLong(KEY_UPDATE_CHECKED, value) }
+
+    override var skippedUpdateTag: String?
+        get() = prefs.getString(KEY_UPDATE_SKIPPED, null)
+        set(value) = prefs.edit { putString(KEY_UPDATE_SKIPPED, value) }
+
     // ── Parallel translations ──────────────────────────────────────────────
 
     /**
@@ -151,6 +176,12 @@ class AppPrefs(private val prefs: SharedPreferences) {
         private const val KEY_ANNOUNCE = "giwu_tts_numbers"
         private const val KEY_CONTINUE = "giwu_tts_continue"
         private const val KEY_PARALLEL = "giwu_parallel_bibles"
+
+        // No Flutter counterpart — the desktop build updates through its own
+        // installer, so these three keys are the Android app alone.
+        private const val KEY_UPDATE_AUTO = "giwu_update_auto"
+        private const val KEY_UPDATE_CHECKED = "giwu_update_checked_at"
+        private const val KEY_UPDATE_SKIPPED = "giwu_update_skipped_tag"
 
         fun create(context: Context): AppPrefs = AppPrefs(
             context.applicationContext

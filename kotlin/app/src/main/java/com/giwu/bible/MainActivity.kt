@@ -15,6 +15,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
@@ -32,6 +33,7 @@ import com.giwu.bible.ui.bookmarks.BookmarksScreen
 import com.giwu.bible.ui.reader.ReadScreen
 import com.giwu.bible.ui.settings.SettingsScreen
 import com.giwu.bible.ui.theme.GiwuTheme
+import com.giwu.bible.ui.update.UpdateDialogHost
 import com.giwu.bible.ui.welcome.WelcomeScreen
 
 class MainActivity : ComponentActivity() {
@@ -75,6 +77,12 @@ private fun GiwuApp() {
         value = container.startup.await()
     }
 
+    // "Once a day, or whenever the app is opened" is one check: this runs on
+    // every launch and the updater itself drops it if the last one was less
+    // than a day ago. MainActivity handles its own configuration changes, so
+    // this does not fire again on rotation.
+    LaunchedEffect(container) { container.updates.checkOnLaunch() }
+
     GiwuTheme(darkTheme = darkMode) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -87,6 +95,7 @@ private fun GiwuApp() {
                 GiwuNavHost(container, resolved)
             }
         }
+        UpdateDialogHost(container.updates)
     }
 }
 

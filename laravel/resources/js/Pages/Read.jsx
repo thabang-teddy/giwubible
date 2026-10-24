@@ -8,6 +8,12 @@ import VersePanel from '../Components/VersePanel'
 import BottomBar from '../Components/BottomBar'
 import { useAuth } from '../hooks/useAuth'
 import { useBookmarks } from '../hooks/useBookmarks'
+import { bookSlug } from '../lib/verseShare'
+
+// The translation a /read/{book}/{chapter} link falls back to, matching
+// ReadController. Anything else has to travel in the URL, or a refresh would
+// quietly move the reader to the King James.
+const DEFAULT_BIBLE = 't_kjv'
 
 function ls(key, fallback) {
   try {
@@ -30,7 +36,7 @@ export default function Read({ bibles = [], books = [], initial = null }) {
   const { bookmarks, isBookmarked, toggle: toggleBookmark } = useBookmarks()
 
   const [primaryBible, setPrimaryBible] = useState(
-    () => initial?.bible ?? params.get('bible') ?? ls('giwu_bible', 't_kjv'),
+    () => initial?.bible ?? params.get('bible') ?? ls('giwu_bible', DEFAULT_BIBLE),
   )
   const [book, setBook] = useState(() => {
     const b = params.get('book')
@@ -56,7 +62,7 @@ export default function Read({ bibles = [], books = [], initial = null }) {
   useEffect(() => { localStorage.setItem('giwu_chapter', JSON.stringify(chapter)) }, [chapter])
 
   const handleReset = () => {
-    setPrimaryBible('t_kjv')
+    setPrimaryBible(DEFAULT_BIBLE)
     setBook(1)
     setChapter(1)
     setActiveVerse(null)
@@ -97,6 +103,35 @@ export default function Read({ bibles = [], books = [], initial = null }) {
 
   const currentBook = books.find((b) => b.b === book)
   const currentVersion = bibles.find((b) => b.table === primaryBible)
+
+  // Keep the address bar on the chapter being read, so it can be copied,
+  // bookmarked or refreshed back to the same place.
+  //
+  // This rewrites the URL in place: no navigation, no Inertia visit, and so
+  // no refetch of a chapter the reader already has. replaceState rather than
+  // pushState, because an entry per chapter would make Back change the URL
+  // while the reader carried on showing the chapter it left.
+  useEffect(() => {
+    if (!currentBook) return
+
+    const slug = bookSlug(currentBook.n) || String(book)
+
+    // The verse rides along so a refresh keeps the highlight, and so arriving
+    // on a shared link leaves that link intact in the address bar. The
+    // translation only appears when it is not the one a bare link assumes.
+    const query = new URLSearchParams()
+    if (activeVerse) query.set('v', String(activeVerse))
+    if (primaryBible !== DEFAULT_BIBLE) query.set('bible', primaryBible)
+
+    const search = query.toString()
+    const url = `/read/${slug}/${chapter}${search ? `?${search}` : ''}`
+
+    if (window.location.pathname + window.location.search === url) return
+
+    // Inertia keeps its own page and scroll state on the entry; replacing the
+    // URL must not throw that away.
+    window.history.replaceState(window.history.state, '', url)
+  }, [currentBook, book, chapter, activeVerse, primaryBible])
 
   return (
     <div className="app">

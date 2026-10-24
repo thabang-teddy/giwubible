@@ -233,34 +233,134 @@ body {
 .chapter-nav-btn:disabled { opacity: 0.3; cursor: default; }
 .chapter-nav-btn:disabled:hover { background: transparent; }
 
+/* The chapter title is the way into the chapter grid, so it is a button --
+   the native <select> it replaced turned a long book into a 150-row scroll. */
 .chapter-nav-label {
-  padding: 0 8px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 500;
   color: var(--gray-700);
   display: flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
 }
 
-.chapter-nav-select {
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--gray-700);
-  cursor: pointer;
-  outline: none;
-  padding: 0;
-  appearance: none;
-  -webkit-appearance: none;
+.chapter-nav-label:hover { background: var(--gray-100); color: var(--gray-900); }
+
+.chapter-nav-label:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
 }
 
 .chapter-nav-caret {
   color: var(--gray-400);
   font-size: 11px;
   pointer-events: none;
-  margin-left: -4px;
+}
+
+/* -- Chapter picker ---------------------------------- */
+/* The web face of the Android reader's chapter sheet: a centred dialog with
+   room for a whole book, dropping to a bottom sheet on a phone. */
+.chapter-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.35);
+  animation: picker-fade 0.12s ease-out;
+}
+
+.chapter-picker {
+  width: 100%;
+  max-width: 360px;
+  max-height: min(70vh, 520px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--gray-200);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  animation: picker-rise 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chapter-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 10px 12px 16px;
+  border-bottom: 1px solid var(--gray-200);
+  flex-shrink: 0;
+}
+
+.chapter-picker-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+}
+
+/* Capped and centred: square tiles across a full-width sheet on a tablet
+   would be the size of buttons on a remote control. */
+.chapter-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  padding: 16px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  overflow-y: auto;
+}
+
+.chapter-tile {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.chapter-tile:hover { background: var(--primary-light); color: var(--primary); }
+.chapter-tile.active { background: var(--primary); color: #fff; }
+
+.chapter-tile:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+@keyframes picker-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes picker-rise {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter-picker-backdrop,
+  .chapter-picker { animation: none; }
 }
 
 .chapter-content {
@@ -642,6 +742,19 @@ body {
 
   /* Chapter nav: tighter */
   .chapter-nav-bar { padding: 12px 0 0; }
+
+  /* Chapter picker: a bottom sheet, like the panel beside it */
+  .chapter-picker-backdrop { align-items: flex-end; padding: 0; }
+
+  .chapter-picker {
+    max-width: none;
+    max-height: 70dvh;
+    border: none;
+    border-top: 1px solid var(--gray-200);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .chapter-picker-grid { padding-bottom: 28px; }
 
   /* Footer: hide tagline on narrow screens */
   .footer-tagline { display: none; }

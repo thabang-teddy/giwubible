@@ -45,7 +45,10 @@ export default function Read({ bibles = [], books = [], initial = null }) {
     return initial?.verse ?? (v ? Number(v) : null)
   })
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [panelOpen, setPanelOpen] = useState(() => !!(initial?.verse ?? params.get('verse')))
+  // A shared link highlights its verse and shows the verse actions; opening
+  // the comparison is the reader's own choice, not something arrival does for
+  // them — on a phone the panel covers the verse they came to read.
+  const [panelOpen, setPanelOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => { localStorage.setItem('giwu_bible', JSON.stringify(primaryBible)) }, [primaryBible])
@@ -79,7 +82,12 @@ export default function Read({ bibles = [], books = [], initial = null }) {
 
   const handleVerseSelect = (v) => {
     setActiveVerse(v)
-    if (v !== null) setPanelOpen(true)
+    if (v === null) setPanelOpen(false)
+  }
+
+  const handleCompare = (v) => {
+    setActiveVerse(v)
+    setPanelOpen(true)
   }
 
   const handleBookmarkToggle = (verse, text) =>
@@ -127,9 +135,11 @@ export default function Read({ bibles = [], books = [], initial = null }) {
           bookName={currentBook?.n ?? ''}
           book={book}
           chapter={chapter}
+          versionAbbreviation={currentVersion?.abbreviation}
           onChapterChange={handleChapterChange}
           activeVerse={activeVerse}
           setActiveVerse={handleVerseSelect}
+          onCompare={handleCompare}
           isBookmarked={user ? isBookmarked : undefined}
           onBookmarkToggle={user ? handleBookmarkToggle : undefined}
         />

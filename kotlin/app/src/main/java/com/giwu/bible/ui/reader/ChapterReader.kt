@@ -47,9 +47,9 @@ import com.giwu.bible.ui.theme.giwu
 /**
  * The chapter heading, the navigation pill and the verse body.
  *
- * Two highlights run independently: the verse the reader tapped (which drives
- * the comparison panel) and the verse being read aloud, which also scrolls
- * itself into view.
+ * Two highlights run independently: the verse the reader tapped (which also
+ * reveals its action row) and the verse being read aloud, which scrolls itself
+ * into view.
  */
 @Composable
 fun ChapterReader(
@@ -59,7 +59,11 @@ fun ChapterReader(
     verses: Async<List<Verse>>,
     activeVerse: Int?,
     speakingVerse: Int?,
+    isBookmarked: (Int) -> Boolean,
     onVerseTap: (Int) -> Unit,
+    onShare: (Int) -> Unit,
+    onCompare: ((Int) -> Unit)?,
+    onBookmarkToggle: ((Int) -> Unit)?,
     onChapterChange: (Int) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
@@ -81,7 +85,11 @@ fun ChapterReader(
                 verses = verses.value,
                 activeVerse = activeVerse,
                 speakingVerse = speakingVerse,
+                isBookmarked = isBookmarked,
                 onVerseTap = onVerseTap,
+                onShare = onShare,
+                onCompare = onCompare,
+                onBookmarkToggle = onBookmarkToggle,
             )
         }
     }
@@ -94,7 +102,11 @@ private fun VerseBody(
     verses: List<Verse>,
     activeVerse: Int?,
     speakingVerse: Int?,
+    isBookmarked: (Int) -> Boolean,
     onVerseTap: (Int) -> Unit,
+    onShare: (Int) -> Unit,
+    onCompare: ((Int) -> Unit)?,
+    onBookmarkToggle: ((Int) -> Unit)?,
 ) {
     val listState = rememberLazyListState()
 
@@ -124,12 +136,25 @@ private fun VerseBody(
         }
         items(count = verses.size, key = { verses[it].number }) { index ->
             val verse = verses[index]
-            VerseRow(
-                verse = verse,
-                isSelected = verse.number == activeVerse,
-                isSpeaking = verse.number == speakingVerse,
-                onTap = { onVerseTap(verse.number) },
-            )
+            val isSelected = verse.number == activeVerse
+            Column {
+                VerseRow(
+                    verse = verse,
+                    isSelected = isSelected,
+                    isSpeaking = verse.number == speakingVerse,
+                    onTap = { onVerseTap(verse.number) },
+                )
+                if (isSelected) {
+                    VerseActions(
+                        isBookmarked = isBookmarked(verse.number),
+                        onShare = { onShare(verse.number) },
+                        onCompare = onCompare?.let { compare -> { compare(verse.number) } },
+                        onBookmarkToggle = onBookmarkToggle?.let { toggle ->
+                            { toggle(verse.number) }
+                        },
+                    )
+                }
+            }
         }
     }
 }

@@ -1244,14 +1244,13 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════
-   VERSE ROW + BOOKMARK BUTTON
+   VERSE ROW + ACTIONS
    ══════════════════════════════════════════════════════ */
 .verse-row {
   display: flex;
   align-items: flex-start;
   gap: 4px;
   border-radius: 6px;
-  margin-bottom: 2px;
 }
 
 .verse-row .verse-item {
@@ -1266,28 +1265,67 @@ body {
   color: var(--gray-900);
 }
 
-.verse-bookmark-btn {
-  flex-shrink: 0;
-  width: 24px;
-  margin-top: 8px;
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--gray-300);
+/* ── Verse actions ─────────────────────────────────── */
+/* Revealed under the verse the reader tapped. The bookmark toggle used to
+   float at the row's right edge on hover; it lives here now so share, compare
+   and bookmark read as one set and none is a stray hover target. */
+.verse-block { margin-bottom: 2px; }
+
+.verse-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.1s, color 0.1s;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 0 8px 15px;
+  animation: verse-actions-in 0.14s ease-out;
 }
 
-.verse-row:hover .verse-bookmark-btn { opacity: 1; }
-.verse-bookmark-btn.bookmarked { opacity: 1; color: var(--primary); }
-.verse-bookmark-btn:hover { color: var(--primary); }
+@keyframes verse-actions-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: none; }
+}
 
-@media (max-width: 768px) {
-  .verse-bookmark-btn { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .verse-actions { animation: none; }
+}
+
+.verse-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  background: var(--surface);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s, background 0.1s;
+}
+
+.verse-action:hover {
+  color: var(--primary);
+  border-color: var(--primary-mid);
+  background: var(--primary-light);
+}
+
+.verse-action:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.verse-action--on {
+  color: var(--primary);
+  border-color: var(--primary-mid);
+  background: var(--primary-light);
+}
+
+/* Above the sheet breakpoint the comparison column is always on screen
+   showing the selected verse, so the button would open nothing. */
+@media (min-width: 769px) {
+  .verse-action--compare { display: none; }
 }
 
 /* ── Navbar bookmark badge ── */

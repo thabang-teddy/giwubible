@@ -361,7 +361,7 @@ jobs:
     timeout-minutes: 30
     needs: [php, js, flutter, cpanel]
 
-    if: github.event_name == 'push' && github.ref_name == 'staging'
+    if: github.event_name == 'push' && github.ref_name == 'master'
 
     defaults:
       run:
@@ -381,7 +381,8 @@ jobs:
         run: |
           VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([0-9.]+).*/\1/')
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "TAG=v${VERSION}-staging.${{ github.run_number }}" >> "$GITHUB_ENV"
+          SERIES=$(echo "${VERSION}" | cut -d. -f1,2)
+          echo "TAG=${SERIES}.${{ github.run_number }}" >> "$GITHUB_ENV"
 
       - name: Build the app
         run: |
@@ -393,7 +394,7 @@ jobs:
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
-          & $iscc /Q "/DAppVersion=$env:VERSION" "/DOutputName=giwubible-$env:TAG-windows-setup" windows\installer\giwu_bible.iss
+          & $iscc /Q "/DAppVersion=$env:TAG" "/DOutputName=giwubible-$env:TAG-windows-setup" windows\installer\giwu_bible.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - uses: actions/upload-artifact@v4
@@ -406,19 +407,23 @@ jobs:
   # ---------------------------------------------------------------------------
   # The tag, and the builds people can download.
   #
-  # Runs only after a push to `staging` (i.e. a merge into it) where EVERY job
+  # Runs only after a push to `master` (i.e. a merge into it) where EVERY job
   # above succeeded — including `flutter`, which does not gate the web deploy
   # but must be green before we hand out an app. A failed check means no tag,
   # no release.
   #
-  # Tag:     v<pubspec version>-staging.<run number>   e.g. v1.0.0-staging.42
-  # Release: a GitHub pre-release with the Android APK and the Windows
+  # Tag:     <major>.<minor>.<run number>   e.g. 1.0.44
+  # Release: a GitHub release with the Android APK and the Windows
   #          installer attached, so both are downloadable from the
   #          repository's Releases page (and the site's /download page).
   #
   # The APK is the native Kotlin app (kotlin/); the installer is the Flutter
-  # Windows build. Both carry the version from pubspec.yaml, which stays the
-  # single source for the tag even though only the desktop app is Flutter now.
+  # Windows build. pubspec.yaml supplies the <major>.<minor> series and the run
+  # number is the patch, so the tag rises on every release.
+  #
+  # The APK carries the TAG as its versionName, not the pubspec version. The
+  # in-app updater compares the tag against the installed versionName, so a
+  # 1.0.0 stamp under a 1.0.44 tag would show every reader a permanent update.
   #
   # The APK is signed with the release keystore held in ANDROID_KEYSTORE_BASE64
   # and its three companion secrets; the build refuses to fall back to debug
@@ -432,10 +437,10 @@ jobs:
     timeout-minutes: 30
     needs: [php, js, flutter, kotlin, cpanel, windows]
 
-    if: github.event_name == 'push' && github.ref_name == 'staging'
+    if: github.event_name == 'push' && github.ref_name == 'master'
 
     concurrency:
-      group: release-staging
+      group: release-master
       cancel-in-progress: false
 
     permissions:
@@ -457,7 +462,8 @@ jobs:
         run: |
           VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([0-9.]+).*/\1/')
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "TAG=v${VERSION}-staging.${{ github.run_number }}" >> "$GITHUB_ENV"
+          SERIES=$(echo "${VERSION}" | cut -d. -f1,2)
+          echo "TAG=${SERIES}.${{ github.run_number }}" >> "$GITHUB_ENV"
 
       # THE SIGNING KEY. Every APK published here has to be signed with the
       # same one, or none of them can replace another: Android refuses an
@@ -491,7 +497,7 @@ jobs:
           GIWU_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           ./gradlew :app:assembleRelease \
-            "-PgiwuVersionName=${VERSION}" \
+            "-PgiwuVersionName=${TAG}" \
             "-PgiwuVersionCode=${{ github.run_number }}" \
             -PgiwuRequireSigning=true
           cp app/build/outputs/apk/release/app-release.apk "giwubible-${TAG}.apk"
@@ -530,8 +536,7 @@ jobs:
             "kotlin/giwubible-${TAG}.apk" \
             "flutter/fn.giwu/giwubible-${TAG}-windows-setup.exe" \
             --target "${{ github.sha }}" \
-            --prerelease \
-            --title "Staging ${TAG}" \
+            --title "Release ${TAG}" \
             --generate-notes
 
       - name: Summarise

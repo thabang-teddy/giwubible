@@ -92,18 +92,42 @@ key is deleted from the runner whether or not the build succeeded, and the
 job summary prints the SHA-256 fingerprint — it must read the same on every
 release.
 
+#### The reference fingerprint
+
+Every release from `v1.0.0-staging.29` onwards — the first built with this key
+— carries this certificate. Read back out of the published `.29` and `.32`
+APKs with `keytool` and confirmed identical:
+
+```text
+SHA-256: F8:2A:79:B5:C8:D3:FF:8A:5B:C9:C4:B7:5D:30:00:40:4A:F7:61:39:54:02:EF:96:59:86:50:7F:A7:C9:7C:58
+SHA-1:   72:2E:86:6F:54:24:3B:14:C9:F3:7F:9E:D2:0F:D6:E3:EF:A3:61:51
+```
+
+Owner and issuer are both `CN=Thabang Teddy Morwasetla, O=Encoded Logic, C=ZA`
+— self-signed, 4096-bit RSA, valid until 11 March 2054.
+
+Check any published APK against it without installing anything:
+
+```bash
+keytool -printcert -jarfile giwubible-<tag>.apk | grep SHA256
+```
+
+A different value means a different key, and every installed app will refuse
+the update.
+
 A built APK is kept out of git (`*.apk` in `.gitignore`); `dist/` is where this
 project's exported builds land.
 
 **CI.** The `kotlin` job in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 runs the unit tests and lint on every push and pull request, and the `release`
-job builds this project's APK and attaches it to the staging pre-release. The
-version is stamped from the Flutter app's `pubspec.yaml` — one version for the
-APK, the git tag and the Windows installer — through
-`-PgiwuVersionName` and `-PgiwuVersionCode`:
+job builds this project's APK and attaches it to the release cut on `master`.
+`pubspec.yaml` supplies the `<major>.<minor>` series and the workflow run
+number is the patch, so the tag — and the APK `versionName`, which CI stamps
+from that tag — rises on every release, through `-PgiwuVersionName` and
+`-PgiwuVersionCode`:
 
 ```bash
-./gradlew :app:assembleRelease -PgiwuVersionName=1.0.0 -PgiwuVersionCode=42
+./gradlew :app:assembleRelease -PgiwuVersionName=1.0.44 -PgiwuVersionCode=44
 ```
 
 ## In-app updates
@@ -119,14 +143,16 @@ exists. [`update/`](app/src/main/java/com/giwu/bible/update) does it instead:
 - **Where from.** `GithubReleaseSource` reads
   `api.github.com/repos/thabang-teddy/giwubible/releases` directly, not through
   the Giwu API, so the check still works when the reader has pointed the app at
-  another server. `/releases` rather than `/releases/latest`, because CI
-  publishes every build as a *pre-release* and `latest` skips those. The newest
-  release carrying an `.apk` asset wins.
+  another server. `/releases` rather than `/releases/latest`, because the
+  historical staging builds are pre-releases and `latest` skips those; reading
+  the list keeps them visible. The newest release carrying an `.apk` asset
+  wins.
 - **What counts as newer.** `ReleaseVersion` parses the CI tag
-  `v<version>-<channel>.<run number>` and compares it with the installed
-  `versionName` / `versionCode`. The core version decides first; only when the
-  cores match does the run number — which *is* the `versionCode` CI stamps —
-  break the tie.
+  `<major>.<minor>.<run number>` and compares it with the installed
+  `versionName`, which CI stamps with that same tag. The run number sits in
+  the patch position, so a newer release always sorts above what is installed.
+  Older `v<version>-<channel>.<run number>` tags still parse, and for those the
+  `versionCode` tie-break still applies.
 - **Installing.** `AndroidApkInstaller` hands the download to the system
   `DownloadManager` (so it survives leaving the app), writes it to this app's
   external files directory, then opens the package installer through the

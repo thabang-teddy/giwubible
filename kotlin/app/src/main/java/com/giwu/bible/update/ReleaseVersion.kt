@@ -3,10 +3,14 @@ package com.giwu.bible.update
 /**
  * A version read off a release tag.
  *
- * CI tags every build `v<pubspec version>-<channel>.<run number>` — say
- * `v1.0.0-staging.42` — and stamps the APK from the same two numbers:
- * `versionName` is the core, `versionCode` is the run number. So the tag alone
- * carries everything needed to decide whether what is installed is behind.
+ * CI tags every build `<major>.<minor>.<run number>` — say `1.0.44` — and
+ * stamps the APK from it: `versionName` is the whole tag, `versionCode` is the
+ * run number. So the tag alone carries everything needed to decide whether
+ * what is installed is behind.
+ *
+ * Tags in the older `v<version>-<channel>.<run number>` form, such as
+ * `v1.0.0-staging.42`, still parse — the channel is optional — so releases
+ * published before the scheme changed are still comparable.
  */
 data class ReleaseVersion(
     /** The dotted core: `1.0.0` arrives as `[1, 0, 0]`. */

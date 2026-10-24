@@ -13,3 +13,10 @@ php/api.giwu/storage/framework/views/
 php/api.giwu/bootstrap/cache/
 .claude/
 .claude/worktrees/
+
+# Signing keys
+# The release keystore and its base64 form stay outside this repo entirely
+# (see kotlin/README.md). Committing one would publish the key every released
+# APK is signed with, and it cannot be rotated without breaking in-app updates.
+*.jks
+*.base64

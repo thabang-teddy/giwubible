@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { maxChaptersForBook } from '../data/chapterCounts'
+import ChapterPicker from './ChapterPicker'
 
 export default function ChapterNav({ bookName, book, chapter, onChapterChange }) {
   const max = maxChaptersForBook(book)
-  const options = Array.from({ length: max }, (_, i) => i + 1)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   return (
     <div className="chapter-nav-bar">
@@ -18,20 +20,16 @@ export default function ChapterNav({ bookName, book, chapter, onChapterChange })
           </svg>
         </button>
 
-        <span className="chapter-nav-label">
-          {bookName}
-          <select
-            className="chapter-nav-select"
-            value={chapter}
-            onChange={(e) => onChapterChange(Number(e.target.value))}
-            aria-label="Chapter"
-          >
-            {options.map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
-          <span className="chapter-nav-caret">▾</span>
-        </span>
+        <button
+          className="chapter-nav-label"
+          onClick={() => setPickerOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={pickerOpen}
+          aria-label="Choose a chapter"
+        >
+          {bookName} {chapter}
+          <span className="chapter-nav-caret" aria-hidden="true">▾</span>
+        </button>
 
         <button
           className="chapter-nav-btn"
@@ -44,6 +42,18 @@ export default function ChapterNav({ bookName, book, chapter, onChapterChange })
           </svg>
         </button>
       </div>
+
+      {pickerOpen && (
+        <ChapterPicker
+          max={max}
+          current={chapter}
+          onSelect={(n) => {
+            setPickerOpen(false)
+            onChapterChange(n)
+          }}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
     </div>
   )
 }

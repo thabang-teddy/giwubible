@@ -83,4 +83,47 @@ class ReleaseVersionTest {
         assertFalse(version.isNewerThan(installedName = "1.0.0", installedCode = 5))
         assertTrue(version.isNewerThan(installedName = "1.0.0", installedCode = 4))
     }
+
+    @Test
+    fun `parses the tag scheme cut on master`() {
+        val version = ReleaseVersion.parse("1.0.44")
+
+        assertEquals(listOf(1, 0, 44), version?.core)
+        assertNull(version?.channel)
+        assertNull(version?.build)
+        assertEquals("1.0.44", version?.display)
+    }
+
+    @Test
+    fun `a higher run number in the patch position is newer`() {
+        val version = requireNotNull(ReleaseVersion.parse("1.0.45"))
+
+        assertTrue(version.isNewerThan(installedName = "1.0.44", installedCode = 44))
+    }
+
+    @Test
+    fun `the release that is already installed is not offered again`() {
+        // The guard against a permanent update prompt: CI stamps versionName
+        // with the whole tag, so the installed name matches and the cores are
+        // equal. Stamping the pubspec version instead would leave 1.0.0 here
+        // and every reader would be told to update, for ever.
+        val version = requireNotNull(ReleaseVersion.parse("1.0.44"))
+
+        assertFalse(version.isNewerThan(installedName = "1.0.44", installedCode = 44))
+        assertTrue(version.isNewerThan(installedName = "1.0.0", installedCode = 44))
+    }
+
+    @Test
+    fun `an install from the old staging scheme sees a master release as newer`() {
+        val version = requireNotNull(ReleaseVersion.parse("1.0.44"))
+
+        assertTrue(version.isNewerThan(installedName = "1.0.0", installedCode = 32))
+    }
+
+    @Test
+    fun `a master release is never a downgrade`() {
+        val version = requireNotNull(ReleaseVersion.parse("1.0.44"))
+
+        assertFalse(version.isNewerThan(installedName = "1.0.45", installedCode = 45))
+    }
 }

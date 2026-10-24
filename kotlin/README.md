@@ -92,6 +92,29 @@ key is deleted from the runner whether or not the build succeeded, and the
 job summary prints the SHA-256 fingerprint — it must read the same on every
 release.
 
+#### The reference fingerprint
+
+Every release from `v1.0.0-staging.29` onwards — the first built with this key
+— carries this certificate. Read back out of the published `.29` and `.32`
+APKs with `keytool` and confirmed identical:
+
+```text
+SHA-256: F8:2A:79:B5:C8:D3:FF:8A:5B:C9:C4:B7:5D:30:00:40:4A:F7:61:39:54:02:EF:96:59:86:50:7F:A7:C9:7C:58
+SHA-1:   72:2E:86:6F:54:24:3B:14:C9:F3:7F:9E:D2:0F:D6:E3:EF:A3:61:51
+```
+
+Owner and issuer are both `CN=Thabang Teddy Morwasetla, O=Encoded Logic, C=ZA`
+— self-signed, 4096-bit RSA, valid until 11 March 2054.
+
+Check any published APK against it without installing anything:
+
+```bash
+keytool -printcert -jarfile giwubible-<tag>.apk | grep SHA256
+```
+
+A different value means a different key, and every installed app will refuse
+the update.
+
 A built APK is kept out of git (`*.apk` in `.gitignore`); `dist/` is where this
 project's exported builds land.
 

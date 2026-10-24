@@ -130,10 +130,47 @@ fun ReadScreen(
     val containerWidth = LocalWindowInfo.current.containerSize.width
     val isWide = with(LocalDensity.current) { containerWidth.toDp() } >= DesktopBreakpoint
 
-    // Clearing the selection closes the sheet, and selecting a verse on a
-    // phone opens it.
+    // The comparison sheet opens from the verse's own Compare action now, but
+    // it still has to go away when the selection does, or when the window
+    // grows wide enough to carry the comparison as a column of its own.
     LaunchedEffect(activeVerse, isWide) {
-        showPanelSheet = activeVerse != null && !isWide
+        if (activeVerse == null || isWide) showPanelSheet = false
+    }
+
+    // Which verses of the open chapter are bookmarked, so every verse's action
+    // row can answer that without touching the store.
+    val bookmarkedVerses = remember(bookmarks, primaryBible, book, chapter) {
+        bookmarks.valueOrNull.orEmpty()
+            .filter { it.bible == primaryBible && it.book == book && it.chapter == chapter }
+            .map { it.verse }
+            .toSet()
+    }
+
+    // The verse is already selected when its actions are on screen, so Compare
+    // only has to raise the sheet. A wide window shows the panel regardless.
+    val compareVerse: (Int) -> Unit = { showPanelSheet = true }
+
+    val shareTappedVerse: (Int) -> Unit = { verse ->
+        shareVerse(
+            context = context,
+            bookName = currentBook?.name,
+            book = book,
+            chapter = chapter,
+            verse = verse,
+            abbreviation = currentBible?.abbreviation,
+            verses = verses.valueOrNull,
+        )
+    }
+
+    val toggleBookmark: ((Int) -> Unit)? = if (user == null) {
+        null
+    } else {
+        { verse ->
+            scope.launch {
+                viewModel.toggleBookmark(verse)?.let { snackbars.showSnackbar(it) }
+            }
+            Unit
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -211,7 +248,11 @@ fun ReadScreen(
                         verses = verses,
                         activeVerse = activeVerse,
                         speakingVerse = playback.verse,
+                        isBookmarked = bookmarkedVerses::contains,
                         onVerseTap = viewModel::toggleVerse,
+                        onShare = shareTappedVerse,
+                        onCompare = if (isWide) null else compareVerse,
+                        onBookmarkToggle = toggleBookmark,
                         onChapterChange = viewModel::selectChapter,
                         onRetry = viewModel::retryChapter,
                         modifier = modifier,
@@ -347,11 +388,10 @@ fun ReadScreen(
     }
 
     if (showPanelSheet && !isWide) {
+        // Dismissing the comparison leaves the verse selected: its action row
+        // is what the reader came back to.
         ModalBottomSheet(
-            onDismissRequest = {
-                showPanelSheet = false
-                viewModel.clearVerse()
-            },
+            onDismissRequest = { showPanelSheet = false },
         ) {
             ComparisonPanel(
                 bibles = bibles,
@@ -364,10 +404,7 @@ fun ReadScreen(
                 loadComparison = { table ->
                     viewModel.comparison(table, book, chapter, activeVerse ?: 1)
                 },
-                onClose = {
-                    showPanelSheet = false
-                    viewModel.clearVerse()
-                },
+                onClose = { showPanelSheet = false },
                 modifier = Modifier.fillMaxHeight(0.6f),
             )
         }

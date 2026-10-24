@@ -172,8 +172,6 @@ class ReaderViewModel(
         prefs.setActiveVerse(if (prefs.activeVerse.value == verse) null else verse)
     }
 
-    fun clearVerse() = prefs.setActiveVerse(null)
-
     /** Back to the default translation at Genesis 1. */
     fun reset() {
         viewModelScope.launch {

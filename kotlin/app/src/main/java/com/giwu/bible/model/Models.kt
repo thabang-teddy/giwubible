@@ -49,10 +49,18 @@ data class Bookmark(
             this.chapter == chapter && this.verse == verse
 }
 
+/**
+ * The signed-in reader.
+ *
+ * [emailVerified] mirrors `email_verified_at` on the server. Bookmarks are
+ * refused until it is true, so the reader screens use it to explain why
+ * rather than letting the save fail with a bare error.
+ */
 data class User(
     val id: Int,
     val name: String,
     val email: String,
+    val emailVerified: Boolean = false,
 )
 
 /**

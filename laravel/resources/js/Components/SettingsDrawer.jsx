@@ -118,6 +118,18 @@ export default function SettingsDrawer({
                   <span className="settings-identity-name">{user.name}</span>
                   <span className="settings-identity-email">{user.email}</span>
                 </p>
+                {!user.email_verified && (
+                  <p className="settings-group-note settings-group-note--warn">
+                    Confirm your email to save bookmarks.{' '}
+                    <button
+                      type="button"
+                      className="settings-note-link"
+                      onClick={() => go('/email/verify')}
+                    >
+                      Send the link
+                    </button>
+                  </p>
+                )}
                 <button className="settings-row" onClick={() => go('/profile')}>
                   <span className="settings-row-label">Profile</span>
                   <Chevron />

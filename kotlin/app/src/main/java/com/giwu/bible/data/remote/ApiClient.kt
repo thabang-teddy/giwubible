@@ -28,6 +28,20 @@ class ApiException(
 ) : IOException(message)
 
 /**
+ * True when the server refused the request because the account's email
+ * address has not been confirmed.
+ *
+ * The bookmark endpoints are the only ones behind `verified`, and nothing
+ * else in the API answers 403, so the status alone identifies it — more
+ * durable than matching on the message text, which the server is free to
+ * reword.
+ */
+val ApiException.isEmailUnverified: Boolean
+    get() = statusCode == HTTP_FORBIDDEN
+
+private const val HTTP_FORBIDDEN = 403
+
+/**
  * The app's HTTP layer.
  *
  * Holds the base URL and bearer token centrally so a change in Settings

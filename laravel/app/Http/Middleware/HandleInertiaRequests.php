@@ -30,11 +30,18 @@ class HandleInertiaRequests extends Middleware
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    // Drives the "verify your email" banner. Shared rather
+                    // than fetched so every page can show it without a round
+                    // trip, including the reader itself.
+                    'email_verified' => $user->hasVerifiedEmail(),
                 ] : null,
             ],
             // The signed-in user's bookmarks, shared so the reader's verse
             // state and the navbar badge stay in sync across every page.
-            'bookmarks' => fn () => $user
+            //
+            // Gated on verification like the bookmark routes themselves, so
+            // the badge cannot show rows the reader is not allowed to reach.
+            'bookmarks' => fn () => $user && $user->hasVerifiedEmail()
                 ? $user->bookmarks()->latest()->get(['id', 'bible', 'book', 'chapter', 'verse', 'text'])
                 : [],
             'flash' => [

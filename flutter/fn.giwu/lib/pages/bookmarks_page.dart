@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/bookmarks_provider.dart';
 import '../providers/prefs_provider.dart';
 import '../theme.dart';
+import '../widgets/verify_email.dart';
 import 'login_page.dart';
 
 class BookmarksPage extends ConsumerWidget {
@@ -70,7 +71,14 @@ class BookmarksPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: bookmarksAsync.isLoading
+      // The list request itself is refused while unconfirmed, so without this
+      // the page would claim there are no bookmarks.
+      body: !user.emailVerified
+          ? UnverifiedBookmarksState(
+              email: user.email,
+              onBack: () => Navigator.of(context).pop(),
+            )
+          : bookmarksAsync.isLoading
           ? const Center(child: CircularProgressIndicator())
           : bookmarks.isEmpty
               ? const Center(
@@ -158,10 +166,22 @@ class _BookmarkTile extends ConsumerWidget {
       trailing: IconButton(
         icon: const Icon(Icons.close, size: 16),
         color: kMuted,
-        onPressed: () => ref
-            .read(bookmarksProvider.notifier)
-            .toggle(bookmark.bible, bookmark.book, bookmark.chapter,
-                bookmark.verse, bookmark.text),
+        onPressed: () async {
+          try {
+            await ref.read(bookmarksProvider.notifier).toggle(
+                bookmark.bible,
+                bookmark.book,
+                bookmark.chapter,
+                bookmark.verse,
+                bookmark.text);
+          } on Exception {
+            // The provider has already put the row back by this point.
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not remove the bookmark.')),
+            );
+          }
+        },
       ),
     );
   }

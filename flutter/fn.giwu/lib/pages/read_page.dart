@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../api/client.dart';
 import '../data/chapter_counts.dart';
 import '../models/bible.dart';
 import '../models/book.dart';
@@ -17,6 +18,7 @@ import '../widgets/book_drawer.dart';
 import '../widgets/chapter_reader.dart';
 import '../widgets/read_aloud_fab.dart';
 import '../widgets/settings_drawer.dart';
+import '../widgets/verify_email.dart';
 import 'bookmarks_page.dart';
 import 'login_page.dart';
 
@@ -54,6 +56,11 @@ class _ReadPageState extends ConsumerState<ReadPage>
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       ref.read(ttsControllerProvider.notifier).stop();
+    }
+    if (state == AppLifecycleState.resumed) {
+      // The verification link opens the web app, so coming back to this
+      // window is the moment to find out whether it was followed.
+      ref.read(authProvider.notifier).refresh();
     }
   }
 
@@ -498,8 +505,31 @@ class _BottomBar extends ConsumerWidget {
                             )
                             .t ??
                         '';
-                    await bookmarksNotifier.toggle(
-                        primaryBible, book, chapter, verse!, verseText);
+                    try {
+                      await bookmarksNotifier.toggle(
+                          primaryBible, book, chapter, verse!, verseText);
+                    } on Exception catch (error) {
+                      if (!isEmailUnverifiedError(error)) {
+                        if (context.mounted) _bookmarkFailed(context);
+                        return;
+                      }
+                      // The server is always the one asked, because the local
+                      // flag goes stale: the link opens in a browser, so this
+                      // window can be holding a "not confirmed" that stopped
+                      // being true minutes ago. Re-read the account before
+                      // blaming the address — that also keeps a 403 raised by
+                      // something other than the gate from showing the wrong
+                      // explanation.
+                      await ref.read(authProvider.notifier).refresh();
+                      if (!context.mounted) return;
+                      final account = ref.read(authProvider);
+                      if (account != null && !account.emailVerified) {
+                        await showVerifyEmailDialog(context, ref,
+                            email: account.email);
+                      } else {
+                        _bookmarkFailed(context);
+                      }
+                    }
                   },
           ),
           const SizedBox(width: 4),
@@ -514,4 +544,13 @@ class _BottomBar extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The one message for a bookmark that would not save for an ordinary reason
+/// — offline, or a server error. A refused verification gets the dialog
+/// instead, which explains itself.
+void _bookmarkFailed(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Could not save the bookmark.')),
+  );
 }

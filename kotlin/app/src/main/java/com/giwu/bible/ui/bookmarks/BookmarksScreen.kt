@@ -33,21 +33,27 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.giwu.bible.AppGraph
 import com.giwu.bible.data.BibleSeed
 import com.giwu.bible.model.Async
 import com.giwu.bible.model.Bookmark
+import com.giwu.bible.ui.auth.VerifyEmailDialog
 import com.giwu.bible.ui.common.VersionBadge
 import com.giwu.bible.ui.theme.giwu
 import kotlinx.coroutines.launch
@@ -68,6 +74,22 @@ fun BookmarksScreen(
     val bookmarks by graph.bookmarks.bookmarks.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val snackbars = remember { SnackbarHostState() }
+    var askToVerifyEmail by remember { mutableStateOf(false) }
+
+    // Picks up a verification followed in a browser since this app last
+    // asked. Tied to the lifecycle, not to composition: coming back from the
+    // browser resumes the activity without recomposing this screen.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        scope.launch { graph.auth.refresh() }
+    }
+
+    user?.takeIf { askToVerifyEmail }?.let { signedIn ->
+        VerifyEmailDialog(
+            auth = graph.auth,
+            email = signedIn.email,
+            onDismiss = { askToVerifyEmail = false },
+        )
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbars) },
@@ -103,6 +125,13 @@ fun BookmarksScreen(
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             when {
                 user == null -> SignedOutState(onBack = onBack)
+
+                // The list request itself is refused while unverified, so
+                // without this the screen would claim there are no bookmarks.
+                user?.emailVerified == false -> UnverifiedState(
+                    onResend = { askToVerifyEmail = true },
+                    onBack = onBack,
+                )
 
                 bookmarks is Async.Loading -> Box(
                     modifier = Modifier.fillMaxSize(),
@@ -189,6 +218,40 @@ private fun BookmarkRow(
                 modifier = Modifier.size(16.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun UnverifiedState(onResend: () -> Unit, onBack: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.BookmarkBorder,
+            contentDescription = null,
+            tint = MaterialTheme.giwu.muted,
+            modifier = Modifier.size(48.dp),
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "Confirm your email to save bookmarks",
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "We sent you a link. Opening it lets your bookmarks follow " +
+                "you to any device.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.giwu.muted,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(20.dp))
+        Button(onClick = onResend) { Text("Send the link again") }
+        Spacer(Modifier.height(4.dp))
+        TextButton(onClick = onBack) { Text("Back to reading") }
     }
 }
 

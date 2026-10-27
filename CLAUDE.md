@@ -13,7 +13,7 @@ Multi-version Bible reader. Users read a primary chapter (KJV by default) and cl
 | Desktop App        | Flutter (`flutter/fn.giwu`) — Windows only; the Android target was removed     |
 | Backend            | Laravel 10 — Inertia (web) **and** a JSON REST API (`/api`, for the apps)      |
 | Database           | SQLite (`bible-sqlite.db`, read-only) + `database.sqlite` (users/bookmarks)    |
-| Auth               | Sanctum: session/cookie for web (Inertia), personal-access tokens for `/api` (the apps) |
+| Auth               | Sanctum: session/cookie for web (Inertia), personal-access tokens for `/api` (the apps). Email verification gates bookmarks only |
 
 > The web app and the JSON API now live in a **single Laravel app at `laravel/`**.
 > React is rendered through Inertia (no standalone SPA); `routes/api.php` stays a
@@ -78,8 +78,15 @@ kotlin/              # Native Android app, Android Studio project root (consumes
 | GET    | `/api/books`                                                | List all books from `key_english`             |
 | GET    | `/api/chapter?bible={table}&book={b}&chapter={c}`           | All verses for a chapter in one translation   |
 | GET    | `/api/verse?book={b}&chapter={c}&verse={v}&bible={table}`   | One verse in the selected comparison version  |
+| POST   | `/api/auth/email/verification-notification`                 | Send the verification link again (token auth) |
 
 > Comparison is 1 version at a time. The `bible` param on `/api/verse` is a single table name, not an array.
+
+> The bookmark endpoints sit behind the `verified` middleware: an unverified
+> token gets a **403** with `{"message": "Your email address is not verified."}`.
+> Everything else — reading, `/auth/me`, `/auth/profile` — stays open, so a
+> client can sign in, detect the state from `email_verified_at`, and fix a
+> mistyped address without being locked out.
 
 ---
 
@@ -162,6 +169,7 @@ flutter build windows         # Release build (CI wraps it in an Inno installer)
 |-----------------------------------|-------------------------------------|
 | Default primary Bible version     | **KJV** (`t_kjv`)                   |
 | Simultaneous comparison versions  | **1** (user picks one from sidebar) |
+| Email verification required for   | **Bookmarks only** (web and `/api`) |
 | Database driver                   | **SQLite** (direct file connection) |
 
 ### Flutter-specific decisions

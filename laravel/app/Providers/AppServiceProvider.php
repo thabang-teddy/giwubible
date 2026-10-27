@@ -2,9 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Support\VerificationMail;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Contracts\Foundation\MaintenanceMode;
 use Illuminate\Foundation\FileBasedMaintenanceMode;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,5 +36,20 @@ class AppServiceProvider extends ServiceProvider
         // the {"message":"Unauthenticated."} 401 before this is consulted, so
         // the Flutter client's contract does not move.
         Authenticate::redirectUsing(fn () => route('login'));
+
+        // Sends the verification link on sign-up. This app has no
+        // EventServiceProvider and event discovery is off, so the listener
+        // Laravel would normally wire up for a MustVerifyEmail user has to be
+        // registered by hand — otherwise `event(new Registered($user))` in the
+        // web and API register actions would fire into nothing.
+        //
+        // Laravel's own SendEmailVerificationNotification would do, but going
+        // through VerificationMail keeps every send under one per-recipient
+        // cap and one mail-failure policy.
+        Event::listen(Registered::class, function (Registered $event): void {
+            if ($event->user instanceof User) {
+                VerificationMail::sendTo($event->user);
+            }
+        });
     }
 }

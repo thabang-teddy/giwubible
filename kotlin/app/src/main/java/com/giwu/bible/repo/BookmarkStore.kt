@@ -32,7 +32,11 @@ class BookmarkStore(
     }
 
     private suspend fun onSessionChanged(user: User?) {
-        if (user == null) {
+        // An unconfirmed address cannot read its own bookmarks either — the
+        // endpoint answers 403 — so asking would spend a request to put the
+        // list into an error state. The flow re-runs when the address is
+        // confirmed, which is when the list is worth fetching.
+        if (user == null || !user.emailVerified) {
             _bookmarks.value = Async.Data(emptyList())
             return
         }

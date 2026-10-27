@@ -55,6 +55,30 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     state = null;
   }
 
+  /// Re-reads the account, which is how a verification followed in a browser
+  /// reaches this app: the link opens the web app, not the desktop one, so
+  /// nothing else would tell us the address is now confirmed.
+  ///
+  /// Quiet on failure — no caller is blocked on it.
+  Future<void> refresh() async {
+    if (state == null) return;
+    try {
+      final data = await auth_api.me();
+      state = UserModel.fromJson(data);
+    } on Exception {
+      // Leave the known state alone; the next request will report properly.
+    }
+  }
+
+  /// Sends the verification link again. Returns true when the server reports
+  /// the address already verified, in which case the local user is refreshed
+  /// so the rest of the app stops asking.
+  Future<bool> resendVerificationEmail() async {
+    final alreadyVerified = await auth_api.resendVerificationEmail();
+    if (alreadyVerified) await refresh();
+    return alreadyVerified;
+  }
+
   Future<void> _setToken(String token) async {
     await _prefs.setString(_kTokenKey, token);
     setAuthToken(token);

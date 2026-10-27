@@ -25,3 +25,12 @@ void setAuthToken(String? token) {
     dio.options.headers.remove('Authorization');
   }
 }
+
+/// True when the server refused the request because the account's email
+/// address has not been confirmed.
+///
+/// The bookmark endpoints are the only ones behind `verified`, and nothing
+/// else in the API answers 403, so the status alone identifies it — more
+/// durable than matching on the message text.
+bool isEmailUnverifiedError(Object error) =>
+    error is DioException && error.response?.statusCode == 403;

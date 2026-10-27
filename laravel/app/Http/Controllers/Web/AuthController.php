@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,11 @@ class AuthController extends Controller
         return Inertia::render('Login');
     }
 
+    /**
+     * Signing in is not gated on verification: reading is the whole app and
+     * needs no account. An unverified reader lands on /read as before and
+     * only meets the notice when they reach for a bookmark.
+     */
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
@@ -48,10 +54,14 @@ class AuthController extends Controller
         ]);
 
         $user = User::create($data);
+
+        // Sends the verification link; the listener is Laravel's own.
+        event(new Registered($user));
+
         Auth::login($user, true);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('read'));
+        return redirect()->route('verification.notice');
     }
 
     public function logout(Request $request): RedirectResponse

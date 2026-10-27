@@ -1,0 +1,104 @@
+{
+  "_useAuth-CpJLORAd.js": {
+    "file": "assets/useAuth-CpJLORAd.js",
+    "name": "useAuth",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_useBookmarks-h8E0lyro.js": {
+    "file": "assets/useBookmarks-h8E0lyro.js",
+    "name": "useBookmarks",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/Pages/Bookmarks.jsx": {
+    "file": "assets/Bookmarks-Dp8BQbi0.js",
+    "name": "Bookmarks",
+    "src": "resources/js/Pages/Bookmarks.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useAuth-CpJLORAd.js",
+      "_useBookmarks-h8E0lyro.js"
+    ]
+  },
+  "resources/js/Pages/Download.jsx": {
+    "file": "assets/Download-KkLdn7Ad.js",
+    "name": "Download",
+    "src": "resources/js/Pages/Download.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/Pages/Home.jsx": {
+    "file": "assets/Home-Bq7USpiO.js",
+    "name": "Home",
+    "src": "resources/js/Pages/Home.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useAuth-CpJLORAd.js"
+    ]
+  },
+  "resources/js/Pages/Login.jsx": {
+    "file": "assets/Login-C5RQHqmJ.js",
+    "name": "Login",
+    "src": "resources/js/Pages/Login.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/Pages/Profile.jsx": {
+    "file": "assets/Profile-Cnl9xaLt.js",
+    "name": "Profile",
+    "src": "resources/js/Pages/Profile.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useAuth-CpJLORAd.js"
+    ]
+  },
+  "resources/js/Pages/Read.jsx": {
+    "file": "assets/Read-DasfRCCY.js",
+    "name": "Read",
+    "src": "resources/js/Pages/Read.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useAuth-CpJLORAd.js",
+      "_useBookmarks-h8E0lyro.js"
+    ]
+  },
+  "resources/js/Pages/VerifyEmail.jsx": {
+    "file": "assets/VerifyEmail-SDTtI7tu.js",
+    "name": "VerifyEmail",
+    "src": "resources/js/Pages/VerifyEmail.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useAuth-CpJLORAd.js"
+    ]
+  },
+  "resources/js/app.jsx": {
+    "file": "assets/app-DHaVBomd.js",
+    "name": "app",
+    "src": "resources/js/app.jsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/Pages/Bookmarks.jsx",
+      "resources/js/Pages/Download.jsx",
+      "resources/js/Pages/Home.jsx",
+      "resources/js/Pages/Login.jsx",
+      "resources/js/Pages/Profile.jsx",
+      "resources/js/Pages/Read.jsx",
+      "resources/js/Pages/VerifyEmail.jsx"
+    ],
+    "css": [
+      "assets/app-XZ4O4XRI.css"
+    ]
+  }
+}

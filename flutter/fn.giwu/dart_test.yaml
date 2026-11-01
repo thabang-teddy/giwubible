@@ -1,8 +1,0 @@
-# Tests tagged `live` talk to a real Giwu server and transfer ~64MB, so they are
-# excluded from the default suite and from CI. Run them deliberately:
-#
-#     flutter test --tags live --run-skipped
-#
-tags:
-  live:
-    skip: "Needs a live Giwu server — run with: flutter test --tags live --run-skipped"

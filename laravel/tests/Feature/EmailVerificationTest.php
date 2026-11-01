@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\VerificationMail;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -271,6 +272,57 @@ class EmailVerificationTest extends TestCase
         $this->actingAs($user)
             ->get('/read')
             ->assertInertia(fn (Assert $page) => $page->count('bookmarks', 1));
+    }
+
+    /**
+     * The notice must not claim a link is on its way when the address has
+     * had its share for the hour.
+     *
+     * This is the failure the page exists to prevent. Registration sends the
+     * link through an event, so the controller never sees that the send was
+     * capped — and a page that says "we sent a link" when nothing was sent
+     * is indistinguishable from a mail server that is down.
+     */
+    public function test_the_notice_admits_when_no_further_link_will_be_sent(): void
+    {
+        Notification::fake();
+        $user = User::factory()->unverified()->create();
+
+        $this->actingAs($user)
+            ->get('/email/verify')
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('VerifyEmail')
+                ->where('canResend', true));
+
+        // Spend the address's allowance for the hour.
+        for ($i = 0; $i < 5; $i++) {
+            VerificationMail::sendTo($user);
+        }
+
+        $this->actingAs($user)
+            ->get('/email/verify')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('canResend', false)
+                ->where('retryMinutes', fn (int $minutes) => $minutes > 0));
+    }
+
+    public function test_a_capped_resend_says_so_instead_of_claiming_success(): void
+    {
+        Notification::fake();
+        $user = User::factory()->unverified()->create();
+
+        for ($i = 0; $i < 5; $i++) {
+            VerificationMail::sendTo($user);
+        }
+
+        $this->actingAs($user)
+            ->from('/email/verify')
+            ->post('/email/verification-notification')
+            ->assertRedirect('/email/verify')
+            ->assertSessionHas('error')
+            ->assertSessionMissing('success');
+
+        Notification::assertSentToTimes($user, VerifyEmail::class, 5);
     }
 
     /** The link Laravel's own notification builds. */

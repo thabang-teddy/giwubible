@@ -28,8 +28,16 @@ class EmailVerificationController extends Controller
             return redirect()->intended(route('read'));
         }
 
+        $user = $request->user();
+
         return Inertia::render('VerifyEmail', [
-            'email' => $request->user()->email,
+            'email' => $user->email,
+            // False when the address has had its share of links for now. The
+            // page must not claim one was just sent when it was not: that is
+            // what makes a capped registration indistinguishable from a
+            // broken mailer.
+            'canResend' => VerificationMail::remainingFor($user) > 0,
+            'retryMinutes' => (int) ceil(VerificationMail::secondsUntilAvailable($user) / 60),
         ]);
     }
 

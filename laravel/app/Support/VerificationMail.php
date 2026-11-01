@@ -68,6 +68,30 @@ final class VerificationMail
     }
 
     /**
+     * How many more links this user's address may receive in the window.
+     *
+     * The notice page asks before claiming a link was just sent. A capped
+     * send is otherwise invisible: registration fires the notification
+     * through an event, so the controller never sees the `false` that
+     * [sendTo] returned, and the reader is left waiting for mail that was
+     * never going to arrive. That is the same shape of failure as a broken
+     * mailer, and it should not be left for anyone to debug twice.
+     */
+    public static function remainingFor(User $user): int
+    {
+        return RateLimiter::remaining(
+            self::keyFor($user->getEmailForVerification()),
+            self::PER_WINDOW,
+        );
+    }
+
+    /** Seconds until the cap frees up, for telling the reader how long. */
+    public static function secondsUntilAvailable(User $user): int
+    {
+        return RateLimiter::availableIn(self::keyFor($user->getEmailForVerification()));
+    }
+
+    /**
      * Hashed and case-folded: the cap must not be sidestepped by changing the
      * case of an address, and the key should not carry the address itself
      * into the cache store.

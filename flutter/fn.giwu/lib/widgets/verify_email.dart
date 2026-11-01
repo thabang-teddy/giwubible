@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/client.dart';
 import '../providers/auth_provider.dart';
 import '../theme.dart';
 
 /// What came of asking for another verification link.
 enum ResendOutcome { sent, alreadyVerified, failed }
+
+/// The outcome, plus whatever the server said about it.
+typedef ResendResult = ({ResendOutcome outcome, String? message});
 
 /// Asks the server for another link and reports what happened.
 ///
@@ -13,25 +17,33 @@ enum ResendOutcome { sent, alreadyVerified, failed }
 /// business — so nothing here can confirm an address. What it can do is get a
 /// fresh link sent and notice when the reader has already followed one
 /// somewhere else.
-Future<ResendOutcome> _resend(WidgetRef ref) async {
+///
+/// A refusal carries the server's own wording through. The useful case is the
+/// 429: several links have already gone to this address, which is a different
+/// situation from a failure and needs a different answer from the reader.
+Future<ResendResult> _resend(WidgetRef ref) async {
   try {
     final alreadyVerified =
         await ref.read(authProvider.notifier).resendVerificationEmail();
-    return alreadyVerified ? ResendOutcome.alreadyVerified : ResendOutcome.sent;
-  } on Exception {
-    return ResendOutcome.failed;
+    return (
+      outcome:
+          alreadyVerified ? ResendOutcome.alreadyVerified : ResendOutcome.sent,
+      message: null,
+    );
+  } on Exception catch (error) {
+    return (outcome: ResendOutcome.failed, message: serverMessage(error));
   }
 }
 
 /// The status line under a resend button: what just happened, if anything.
 class _ResendStatus extends StatelessWidget {
-  const _ResendStatus(this.outcome);
+  const _ResendStatus(this.result);
 
-  final ResendOutcome? outcome;
+  final ResendResult? result;
 
   @override
   Widget build(BuildContext context) {
-    return switch (outcome) {
+    return switch (result?.outcome) {
       ResendOutcome.sent => const Padding(
           padding: EdgeInsets.only(top: 12),
           child: Text(
@@ -42,7 +54,10 @@ class _ResendStatus extends StatelessWidget {
       ResendOutcome.failed => Padding(
           padding: const EdgeInsets.only(top: 12),
           child: Text(
-            'Could not send the link. Please try again.',
+            // The server's wording when it gave one: "several links already
+            // sent" is advice, not an error, and saying "try again" instead
+            // would send the reader round the same loop.
+            result?.message ?? 'Could not send the link. Please try again.',
             style: TextStyle(
               fontSize: 12,
               color: Theme.of(context).colorScheme.error,
@@ -82,24 +97,24 @@ class _VerifyEmailDialog extends ConsumerStatefulWidget {
 
 class _VerifyEmailDialogState extends ConsumerState<_VerifyEmailDialog> {
   bool _sending = false;
-  ResendOutcome? _outcome;
+  ResendResult? _result;
 
   Future<void> _send() async {
     setState(() {
       _sending = true;
-      _outcome = null;
+      _result = null;
     });
-    final outcome = await _resend(ref);
+    final result = await _resend(ref);
     if (!mounted) return;
     setState(() {
       _sending = false;
-      _outcome = outcome;
+      _result = result;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final settled = _outcome == ResendOutcome.alreadyVerified;
+    final settled = _result?.outcome == ResendOutcome.alreadyVerified;
 
     return AlertDialog(
       title: const Text('Confirm your email'),
@@ -114,7 +129,7 @@ class _VerifyEmailDialogState extends ConsumerState<_VerifyEmailDialog> {
                     'know the address is yours. Open the link we sent to '
                     '${widget.email}.',
           ),
-          _ResendStatus(_outcome),
+          _ResendStatus(_result),
           const SizedBox(height: 12),
           const Text(
             'Reading needs no account, so nothing else is held up by this.',
@@ -163,18 +178,18 @@ class RegisteredNotice extends ConsumerStatefulWidget {
 
 class _RegisteredNoticeState extends ConsumerState<RegisteredNotice> {
   bool _sending = false;
-  ResendOutcome? _outcome;
+  ResendResult? _result;
 
   Future<void> _send() async {
     setState(() {
       _sending = true;
-      _outcome = null;
+      _result = null;
     });
-    final outcome = await _resend(ref);
+    final result = await _resend(ref);
     if (!mounted) return;
     setState(() {
       _sending = false;
-      _outcome = outcome;
+      _result = result;
     });
   }
 
@@ -198,7 +213,7 @@ class _RegisteredNoticeState extends ConsumerState<RegisteredNotice> {
           'later.',
           style: TextStyle(fontSize: 12, color: kMuted),
         ),
-        _ResendStatus(_outcome),
+        _ResendStatus(_result),
         const SizedBox(height: 20),
         FilledButton(
           onPressed: widget.onContinue,
@@ -208,11 +223,12 @@ class _RegisteredNoticeState extends ConsumerState<RegisteredNotice> {
         TextButton(
           // Nothing left to send once the server has told us the address is
           // confirmed, so the button stops being an action.
-          onPressed: _sending || _outcome == ResendOutcome.alreadyVerified
-              ? null
-              : _send,
+          onPressed:
+              _sending || _result?.outcome == ResendOutcome.alreadyVerified
+                  ? null
+                  : _send,
           child: Text(
-            _outcome == ResendOutcome.alreadyVerified
+            _result?.outcome == ResendOutcome.alreadyVerified
                 ? 'Already confirmed'
                 : _sending
                     ? 'Sending…'

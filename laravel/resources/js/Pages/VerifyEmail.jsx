@@ -8,8 +8,13 @@ import { useAuth } from '../hooks/useAuth'
  * Deliberately not a dead end: reading is the whole app and needs no account,
  * so "Keep reading" is as prominent as the resend, and the address itself can
  * still be corrected from the profile.
+ *
+ * `canResend` is false once the address has had its share of links for the
+ * hour. The page then says so rather than claiming a link is on its way —
+ * a sent-but-capped registration would otherwise look exactly like a mail
+ * server that is down.
  */
-export default function VerifyEmail({ email }) {
+export default function VerifyEmail({ email, canResend = true, retryMinutes = 0 }) {
   const { flash } = usePage().props
   const { logout } = useAuth()
   const { post, processing } = useForm({})
@@ -18,6 +23,8 @@ export default function VerifyEmail({ email }) {
     e.preventDefault()
     post('/email/verification-notification', { preserveScroll: true })
   }
+
+  const waitFor = retryMinutes > 1 ? `about ${retryMinutes} minutes` : 'a minute or two'
 
   return (
     <div className="login-page">
@@ -37,10 +44,19 @@ export default function VerifyEmail({ email }) {
 
         <h1 className="verify-heading">Confirm your email</h1>
 
-        <p className="verify-body">
-          We sent a link to <strong>{email}</strong>. Open it and your bookmarks
-          will follow you to any device — the Android and desktop apps included.
-        </p>
+        {canResend ? (
+          <p className="verify-body">
+            We sent a link to <strong>{email}</strong>. Open it and your bookmarks
+            will follow you to any device — the Android and desktop apps included.
+          </p>
+        ) : (
+          <p className="verify-body">
+            We have already sent several links to <strong>{email}</strong>. Check
+            your inbox, and your spam folder, before asking for another — you can
+            do that again in {waitFor}.
+          </p>
+        )}
+
         <p className="verify-body verify-body--muted">
           Reading needs no account at all, so you can carry on without this.
         </p>
@@ -49,8 +65,13 @@ export default function VerifyEmail({ email }) {
         {flash?.error && <p className="login-error">{flash.error}</p>}
 
         <form onSubmit={resend}>
-          <button type="submit" className="login-submit" disabled={processing} style={{ width: '100%' }}>
-            {processing ? 'Sending…' : 'Send the link again'}
+          <button
+            type="submit"
+            className="login-submit"
+            disabled={processing || !canResend}
+            style={{ width: '100%' }}
+          >
+            {processing ? 'Sending…' : canResend ? 'Send the link again' : `Try again in ${waitFor}`}
           </button>
         </form>
 

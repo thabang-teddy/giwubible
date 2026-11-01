@@ -8,6 +8,8 @@ import com.giwu.bible.AppContainer
 import com.giwu.bible.AppGraph
 import com.giwu.bible.data.AppPrefs
 import com.giwu.bible.data.BibleSeed
+import com.giwu.bible.data.remote.ApiException
+import com.giwu.bible.data.remote.isEmailUnverified
 import com.giwu.bible.model.Async
 import com.giwu.bible.model.Bible
 import com.giwu.bible.model.Book
@@ -29,6 +31,18 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/**
+ * What came of a bookmark toggle.
+ *
+ * Worth a type of its own because the three cases want three different
+ * answers on screen: nothing, a snackbar, or the verification dialog.
+ */
+sealed interface BookmarkOutcome {
+    data object Saved : BookmarkOutcome
+    data object NeedsVerifiedEmail : BookmarkOutcome
+    data class Failed(val message: String) : BookmarkOutcome
+}
 
 private data class ChapterKey(
     val bible: String,
@@ -230,9 +244,13 @@ class ReaderViewModel(
 
     /**
      * Adds or removes the bookmark for [verse], taking its text from the
-     * chapter already on screen. Returns a message when it failed.
+     * chapter already on screen.
+     *
+     * An unverified address is told apart from a real failure: the server
+     * refuses the write with a 403, and that reader wants the verification
+     * prompt rather than an error in a snackbar.
      */
-    suspend fun toggleBookmark(verse: Int): String? {
+    suspend fun toggleBookmark(verse: Int): BookmarkOutcome {
         val key = chapterKey.value
         val text = chapter.value.valueOrNull
             ?.firstOrNull { it.number == verse }
@@ -240,9 +258,17 @@ class ReaderViewModel(
             .orEmpty()
         return try {
             bookmarks.toggle(key.bible, key.book, key.chapter, verse, text)
-            null
+            BookmarkOutcome.Saved
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: ApiException) {
+            if (e.isEmailUnverified) {
+                BookmarkOutcome.NeedsVerifiedEmail
+            } else {
+                BookmarkOutcome.Failed(e.message)
+            }
         } catch (e: Exception) {
-            e.message ?: "Could not save the bookmark."
+            BookmarkOutcome.Failed(e.message ?: "Could not save the bookmark.")
         }
     }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
 import '../theme.dart';
+import '../widgets/verify_email.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key, this.onSuccess, this.startInRegister = false});
@@ -21,6 +22,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   late bool _isLogin = !widget.startInRegister;
   bool _submitting = false;
   String? _error;
+
+  /// Set once an account has just been created, which swaps the form for the
+  /// "check your inbox" notice. Signing in does not set it: an existing
+  /// account has either confirmed already or been told about it before.
+  String? _registeredAs;
 
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -41,14 +47,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         await ref
             .read(authProvider.notifier)
             .login(_emailCtrl.text.trim(), _passwordCtrl.text);
+        if (mounted) widget.onSuccess?.call();
       } else {
-        await ref.read(authProvider.notifier).register(
+        final created = await ref.read(authProvider.notifier).register(
               _nameCtrl.text.trim(),
               _emailCtrl.text.trim(),
               _passwordCtrl.text,
             );
+        if (mounted) setState(() { _registeredAs = created.email; });
       }
-      if (mounted) widget.onSuccess?.call();
     } on Exception catch (e) {
       setState(() { _error = _parseError(e); });
     } finally {
@@ -88,7 +95,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
+              // An account that has just been created swaps the form for the
+              // "check your inbox" notice; only bookmarks wait on the link,
+              // so carrying on into the reader stays one tap away.
+              child: _registeredAs != null
+                  ? RegisteredNotice(
+                      email: _registeredAs!,
+                      onContinue: () => widget.onSuccess?.call(),
+                    )
+                  : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Tabs

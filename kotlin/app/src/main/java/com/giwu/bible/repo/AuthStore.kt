@@ -73,6 +73,37 @@ class AuthStore(
         _user.value = null
     }
 
+    /**
+     * Re-reads the account, which is how a verification done in a browser
+     * reaches the app: the link opens the web app, not this one, so nothing
+     * else would tell us the address is now confirmed.
+     *
+     * Quiet on failure — the caller is never blocked on it.
+     */
+    suspend fun refresh() {
+        if (_user.value == null) return
+        try {
+            _user.value = api.me()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.d(TAG, "Could not refresh the account: ${e.message}")
+        }
+    }
+
+    /**
+     * Sends the verification link again.
+     *
+     * Returns true when the server reports the address already verified, in
+     * which case the local user is refreshed so the rest of the app stops
+     * asking.
+     */
+    suspend fun resendVerificationEmail(): Boolean {
+        val alreadyVerified = api.resendVerificationEmail()
+        if (alreadyVerified) refresh()
+        return alreadyVerified
+    }
+
     private fun storeToken(token: String) {
         tokens.write(token)
         client.setAuthToken(token)

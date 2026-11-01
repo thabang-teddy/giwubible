@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,14 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    /**
+     * Creates the account and issues a token straight away.
+     *
+     * The token works immediately — reading needs no account and the apps
+     * sign in with it — but the bookmark endpoints stay closed until the
+     * address is verified. The `email_verified_at` field in the response (null
+     * here) is how the client knows which of the two it is holding.
+     */
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -22,6 +31,9 @@ class AuthController extends Controller
         ]);
 
         $user = User::create($data);
+
+        event(new Registered($user));
+
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json(['token' => $token, 'user' => $user], 201);
@@ -68,11 +80,7 @@ class AuthController extends Controller
             'password' => ['sometimes', 'required', 'confirmed', Password::min(8)],
         ]);
 
-        if (isset($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
-        }
-
-        $user->update($data);
+        $user->updateProfile($data);
 
         return response()->json($user->fresh());
     }

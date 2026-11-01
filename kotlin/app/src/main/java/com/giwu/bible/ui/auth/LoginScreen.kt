@@ -65,6 +65,11 @@ fun LoginScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
 
+    // Set once an account has just been created, which swaps the form for the
+    // "check your inbox" notice. Signing in does not set it: an existing
+    // account has either verified already or been told about it before.
+    var registeredAs by remember { mutableStateOf<String?>(null) }
+
     val scope = rememberCoroutineScope()
 
     val canSubmit = !busy &&
@@ -79,11 +84,12 @@ fun LoginScreen(
         scope.launch {
             try {
                 if (isRegister) {
-                    auth.register(name.trim(), email.trim(), password)
+                    val created = auth.register(name.trim(), email.trim(), password)
+                    registeredAs = created.email
                 } else {
                     auth.login(email.trim(), password)
+                    onSignedIn()
                 }
-                onSignedIn()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -97,7 +103,15 @@ fun LoginScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isRegister) "Create account" else "Sign in") },
+                title = {
+                    Text(
+                        when {
+                            registeredAs != null -> "Confirm your email"
+                            isRegister -> "Create account"
+                            else -> "Sign in"
+                        },
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -115,6 +129,17 @@ fun LoginScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            val pendingAddress = registeredAs
+            if (pendingAddress != null) {
+                RegisteredNotice(
+                    auth = auth,
+                    email = pendingAddress,
+                    onContinue = onSignedIn,
+                    modifier = Modifier.widthIn(max = 420.dp),
+                )
+                return@Column
+            }
+
             Column(modifier = Modifier.widthIn(max = 420.dp)) {
                 Text(
                     text = "Bookmarks are saved to your Giwu account, so they follow " +

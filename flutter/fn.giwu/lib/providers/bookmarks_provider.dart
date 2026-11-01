@@ -42,7 +42,14 @@ class BookmarksNotifier extends StateNotifier<AsyncValue<List<BookmarkModel>>> {
     if (existing != null) {
       final current = state.valueOrNull ?? [];
       state = AsyncValue.data(current.where((b) => b.id != existing.id).toList());
-      await bm_api.deleteBookmark(existing.id);
+      try {
+        await bm_api.deleteBookmark(existing.id);
+      } on Exception {
+        // Put the row back: it is still on the server, and leaving it off
+        // the list would tell the reader it was removed when it was not.
+        state = AsyncValue.data(current);
+        rethrow;
+      }
     } else {
       final created = await bm_api.saveBookmark(
         bible: bible,

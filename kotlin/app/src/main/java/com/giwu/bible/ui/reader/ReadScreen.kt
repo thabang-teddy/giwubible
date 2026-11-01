@@ -58,6 +58,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.giwu.bible.AppContainer
@@ -66,6 +68,7 @@ import com.giwu.bible.R
 import com.giwu.bible.model.Verse
 import com.giwu.bible.tts.TtsReadiness
 import com.giwu.bible.tts.TtsStatus
+import com.giwu.bible.ui.auth.VerifyEmailDialog
 import com.giwu.bible.ui.theme.DesktopBreakpoint
 import com.giwu.bible.ui.theme.PanelWidth
 import com.giwu.bible.ui.theme.SidebarWidth
@@ -125,6 +128,15 @@ fun ReadScreen(
     // The engine may have gained voice data while the reader was away.
     LaunchedEffect(Unit) { viewModel.probeReadiness(forceReload = true) }
 
+    // The verification link opens the web app, so the only way this app finds
+    // out the address was confirmed is to ask again when the reader comes
+    // back. It has to hang off the lifecycle rather than a LaunchedEffect:
+    // returning from the browser resumes the activity without recomposing
+    // this screen, so an effect keyed on Unit would never run a second time.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        scope.launch { graph.auth.refresh() }
+    }
+
     // Window width, not screen width: a freeform or split-screen window can
     // be far narrower than the display it is on.
     val containerWidth = LocalWindowInfo.current.containerSize.width
@@ -162,15 +174,47 @@ fun ReadScreen(
         )
     }
 
+    // Raised by the server refusing the write, confirmed against the account
+    // before it is shown.
+    var askToVerifyEmail by remember { mutableStateOf(false) }
+
     val toggleBookmark: ((Int) -> Unit)? = if (user == null) {
         null
     } else {
         { verse ->
             scope.launch {
-                viewModel.toggleBookmark(verse)?.let { snackbars.showSnackbar(it) }
+                when (val outcome = viewModel.toggleBookmark(verse)) {
+                    BookmarkOutcome.Saved -> Unit
+
+                    // The server is always the one asked, rather than the
+                    // `emailVerified` flag held here: the link opens in a
+                    // browser, so this screen can be holding a "not
+                    // confirmed" that stopped being true minutes ago.
+                    // Re-reading the account before blaming the address also
+                    // keeps a 403 raised by something other than the gate
+                    // from showing the wrong explanation.
+                    BookmarkOutcome.NeedsVerifiedEmail -> {
+                        graph.auth.refresh()
+                        if (graph.auth.user.value?.emailVerified == false) {
+                            askToVerifyEmail = true
+                        } else {
+                            snackbars.showSnackbar("Could not save the bookmark.")
+                        }
+                    }
+
+                    is BookmarkOutcome.Failed -> snackbars.showSnackbar(outcome.message)
+                }
             }
             Unit
         }
+    }
+
+    user?.takeIf { askToVerifyEmail }?.let { signedIn ->
+        VerifyEmailDialog(
+            auth = graph.auth,
+            email = signedIn.email,
+            onDismiss = { askToVerifyEmail = false },
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

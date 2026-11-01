@@ -98,6 +98,38 @@ db_dir="$(dirname "$db_path")"
 # error.
 [ -f "${APP}/database/bible-sqlite.db" ] || { log "FATAL: bible-sqlite.db missing from the checkout."; exit 1; }
 
+# ---------------------------------------------------------------------------
+# The mail pre-flight. Email verification gates bookmarks, so a stage that
+# cannot send mail is a stage where nobody can finish signing up.
+#
+# `log` is the framework default and what .env.example ships, which is right
+# for a local checkout and wrong everywhere else: it writes the whole message
+# to storage/logs/laravel.log and sends NOTHING. There is no error to find.
+# Registration succeeds, the notice page appears, and the link never arrives.
+# That is exactly how it reached staging — the code was fine, the .env was
+# never changed, and it took a round of diagnosis to notice. `array` discards
+# the message outright, and an unset value falls back to `log`.
+#
+# GIWU_ALLOW_LOG_MAIL=1 deploys anyway, for a stage with no mailbox yet or an
+# incident where not sending is the point. A refusal with no override is its
+# own outage.
+# ---------------------------------------------------------------------------
+mail_mailer="$(grep -E '^MAIL_MAILER=' "${APP}/.env" | tail -1 | cut -d= -f2- | tr -d '"'"'"'\r ')"
+
+if [ "${GIWU_ALLOW_LOG_MAIL:-0}" = "1" ]; then
+    log "WARNING: MAIL_MAILER='${mail_mailer:-<unset>}' sends no email, accepted via GIWU_ALLOW_LOG_MAIL."
+else
+    case "${mail_mailer:-}" in
+        log|array|"")
+            log "FATAL: MAIL_MAILER is '${mail_mailer:-<unset>}', which sends no email."
+            log '       Email verification gates bookmarks, so sign-ups would stall'
+            log '       with nothing in the logs to explain it. Set MAIL_MAILER=smtp'
+            log "       in ${APP}/.env — see GO-LIVE.md §4 — or re-run with"
+            log '       GIWU_ALLOW_LOG_MAIL=1 to deploy without working email.'
+            exit 1 ;;
+    esac
+fi
+
 cd "$APP"
 
 # Maintenance mode FIRST. A git reset over a live tree is not an atomic swap,

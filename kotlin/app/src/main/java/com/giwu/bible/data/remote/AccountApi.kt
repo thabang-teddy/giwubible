@@ -44,6 +44,16 @@ class AccountApi(private val client: ApiClient) {
     /** Confirms a restored token still works, and returns who it belongs to. */
     suspend fun me(): User = client.get("auth/me").toUser()
 
+    /**
+     * Asks the server to send the verification link again.
+     *
+     * Returns true when the address turned out to be verified already, which
+     * is the server's way of saying the reader followed an earlier link and
+     * this app has not caught up yet.
+     */
+    suspend fun resendVerificationEmail(): Boolean =
+        client.post("auth/email/verification-notification").boolOrNull("verified") ?: false
+
     // ── Bookmarks ──────────────────────────────────────────────────────────
 
     suspend fun listBookmarks(): List<Bookmark> {
@@ -78,16 +88,6 @@ class AccountApi(private val client: ApiClient) {
         user = (objectOrNull("user") ?: this).toUser(),
     )
 
-    private fun JsonElement.toUser(): User {
-        // /auth/me answers with the user itself; register and login nest it.
-        val source = objectOrNull("user") ?: objectOrNull("data") ?: this
-        return User(
-            id = source.int("id"),
-            name = source.string("name"),
-            email = source.string("email"),
-        )
-    }
-
     private fun JsonElement.toBookmark(): Bookmark {
         val source = objectOrNull("data") ?: this
         return Bookmark(
@@ -99,4 +99,24 @@ class AccountApi(private val client: ApiClient) {
             text = source.stringOrNull("text").orEmpty(),
         )
     }
+}
+
+/**
+ * Reads an account out of whatever shape the endpoint used.
+ *
+ * `/auth/me` answers with the user itself, while register and login nest it
+ * under `user`. `emailVerified` is derived from `email_verified_at`, which is
+ * a timestamp when the address is confirmed and JSON null when it is not.
+ *
+ * Top-level and `internal` rather than private to the class so the mapping
+ * can be tested against real payloads without an HTTP layer.
+ */
+internal fun JsonElement.toUser(): User {
+    val source = objectOrNull("user") ?: objectOrNull("data") ?: this
+    return User(
+        id = source.int("id"),
+        name = source.string("name"),
+        email = source.string("email"),
+        emailVerified = source.stringOrNull("email_verified_at") != null,
+    )
 }

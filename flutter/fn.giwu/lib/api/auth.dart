@@ -27,3 +27,17 @@ Future<Map<String, dynamic>> me() async {
   final response = await dio.get('/auth/me');
   return response.data as Map<String, dynamic>;
 }
+
+/// Asks the server to send the verification link again.
+///
+/// Returns true when the address turned out to be verified already, which is
+/// the server's way of saying the link was followed elsewhere and this app has
+/// not caught up yet.
+Future<bool> resendVerificationEmail() async {
+  final response = await dio.post('/auth/email/verification-notification');
+  final data = response.data;
+  if (data is Map<String, dynamic>) {
+    return data['verified'] == true;
+  }
+  return false;
+}

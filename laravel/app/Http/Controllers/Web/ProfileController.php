@@ -30,8 +30,12 @@ class ProfileController extends Controller
             'password' => ['sometimes', 'required', 'confirmed', Password::min(8)],
         ]);
 
-        $user->update($data);
+        $emailChanged = isset($data['email']) && $data['email'] !== $user->email;
 
-        return back()->with('success', 'Profile updated.');
+        $user->updateProfile($data);
+
+        return back()->with('success', $emailChanged
+            ? 'Profile updated. Check your inbox to verify your new address.'
+            : 'Profile updated.');
     }
 }

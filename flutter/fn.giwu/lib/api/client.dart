@@ -25,3 +25,28 @@ void setAuthToken(String? token) {
     dio.options.headers.remove('Authorization');
   }
 }
+
+/// True when the server refused the request because the account's email
+/// address has not been confirmed.
+///
+/// The bookmark endpoints are the only ones behind `verified`, and nothing
+/// else in the API answers 403, so the status alone identifies it — more
+/// durable than matching on the message text.
+bool isEmailUnverifiedError(Object error) =>
+    error is DioException && error.response?.statusCode == 403;
+
+/// The `message` the API sent with a failure, when it sent one.
+///
+/// Laravel reports refusals as `{"message": "..."}`, and some of them are
+/// worth showing verbatim — a 429 from the resend endpoint explains that
+/// several links have already gone out, which a generic "try again" would
+/// throw away.
+String? serverMessage(Object error) {
+  if (error is! DioException) return null;
+  final data = error.response?.data;
+  if (data is Map && data['message'] is String) {
+    final message = data['message'] as String;
+    return message.trim().isEmpty ? null : message;
+  }
+  return null;
+}

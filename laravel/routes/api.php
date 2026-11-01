@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\BibleDownloadController;
 use App\Http\Controllers\Api\BookController;
 use App\Http\Controllers\Api\BookmarkController;
 use App\Http\Controllers\Api\ChapterController;
+use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\VerseController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,15 +21,26 @@ Route::get('/verses', [VerseController::class, 'comparisons']);
 Route::get('/downloads/{filename}', [AppDownloadController::class, 'serve']);
 
 // Auth
-Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
-    Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/auth/profile', [AuthController::class, 'updateProfile'])->middleware('throttle:profile-update');
 
-    Route::get('/bookmarks', [BookmarkController::class, 'index']);
-    Route::post('/bookmarks', [BookmarkController::class, 'store']);
-    Route::delete('/bookmarks/{id}', [BookmarkController::class, 'destroy']);
+    // Asking for another verification link must not itself need a verified
+    // address, and neither must /auth/me — that is how the app notices the
+    // reader has verified in the meantime.
+    Route::post('/auth/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:verification-send');
+
+    // Bookmarks are the only user-owned data, so they are what verification
+    // actually guards. `verified` answers a JSON request with a 403 and
+    // {"message": "Your email address is not verified."}.
+    Route::middleware('verified')->group(function () {
+        Route::get('/bookmarks', [BookmarkController::class, 'index']);
+        Route::post('/bookmarks', [BookmarkController::class, 'store']);
+        Route::delete('/bookmarks/{id}', [BookmarkController::class, 'destroy']);
+    });
 });
